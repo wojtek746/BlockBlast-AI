@@ -65,7 +65,8 @@ def sending(filename='screen.png'):
 
 def send(fragment, key, x, y):
     import response
-    response = response.response(fragment, key)
+    gray = cv2.cvtColor(fragment, cv2.COLOR_BGR2GRAY)
+    response = response.response(gray, key)
     if response.status_code != 200:
         print(response.text)
         return False
