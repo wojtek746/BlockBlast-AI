@@ -1,11 +1,10 @@
 import subprocess
 import time
 import os
+from http.client import responses
 import cv2
 import numpy as np
 import pytesseract
-import requests
-import io
 
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
@@ -85,16 +84,13 @@ def sending(filename='screen.png', url='https://logical-raccoon-keen.ngrok-free.
     send(screen, 928, 1479, url)
 
 def send(screen, x, y, url):
+    import response
     fragment = screen[y:y+56, x:x+57]
     cv2.imshow("fragment", fragment)
     key = chr(cv2.waitKey(0))
     cv2.destroyWindow("fragment")
     if key in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']:
-        _, buffer = cv2.imencode('.png', fragment)
-        image_file = io.BytesIO(buffer.tobytes())
-        files = {'file': ('fragment.png', image_file, 'image/png')}
-        data = {'description': key}
-        response = requests.post(url, files=files, data=data)
+        response = response.response(fragment, key, url)
         if response.status_code != 200:
             print(response.text)
             send(screen, x, y, url)
