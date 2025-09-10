@@ -4,6 +4,9 @@ import os
 import cv2
 import numpy as np
 import pytesseract
+import torch
+from PIL import Image
+from learnNumberAI import NumberNet
 
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
@@ -12,6 +15,12 @@ proc = None
 fragments = []
 coords = []
 sent = {}
+
+device = torch.device("cpu")
+numberAI = NumberNet().to(device)
+
+numberAI.load_state_dict(torch.load("number_net.pth", map_location=device))
+numberAI.eval()
 
 def tap(x, y):
     os.system(f"adb shell input tap {str(x)} {str(y)}")
@@ -91,6 +100,38 @@ def get_screenshot(filename='screen.png'):
     os.system(f"adb pull /sdcard/screen.png {filename}")
     os.system("adb shell rm /sdcard/screen.png")
 
+def number(fragment):
+    global numberAI
+
+    img = cv2.cvtColor(fragment, cv2.COLOR_BGR2RGB)
+    pil_img = Image.fromarray(img)
+
+    tensor = numberAI.transform(pil_img).unsqueeze(0).to(device)
+
+    numberAI.eval()
+    with torch.no_grad():
+        outputs = numberAI(tensor)
+        _, predicted = torch.max(outputs, 1)
+
+    return int(predicted.item())
+
+def board_to_number_array(filename='screen.png'):
+    xs = [94,213,333,452,571,690,809,928]
+    ys = [644,763,882,1002,1121,1240,1360,1479]
+    board_img = cv2.imread(filename)
+    result = []
+    for y in ys:
+        row = []
+        for x in xs:
+            fragment = board_img[y:y + 56, x:x + 57]
+            n = number(fragment)
+            if n == 0:
+                row.append(0)
+            else:
+                row.append(1/n)
+        result.append(row)
+    return result
+
 def board_to_bool_array(filename='screen.png'):
     start_x = 120
     start_y = 670
@@ -108,12 +149,15 @@ def board_to_bool_array(filename='screen.png'):
     return result
 
 def main():
-    # get_screenshot()
+    get_screenshot()
     # bool_array = board_to_bool_array()
     # for row in bool_array:
     #     print(row)
+    number_array = board_to_number_array()
+    for row in number_array:
+        print(row)
     #swipe(500, 200, 500, 300, 1)
-    sending()
+    #sending()
 
 if __name__ == "__main__":
     main()
