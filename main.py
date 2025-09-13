@@ -171,31 +171,19 @@ def shape(b, n):
         if isin(b, x+5, y-59) and isin(b, x+49, y-59) and isin(b, x+5, y+113) and isin(b, x+49, y+113):
             return [[not isin(b, x-27, y-27), not isin(b, x+27, y-27), not isin(b, x+81, y-27), False, False], [not isin(b, x-27, y+27), not isin(b, x+27, y+27), not isin(b, x+81, y+27), False, False], [not isin(b, x-27, y+81), not isin(b, x+27, y+81), not isin(b, x+81, y+81), False, False], [False, False, False, False, False], [False, False, False, False, False]]
         if isin(b, x+5, y-86) and isin(b, x+49, y-86) and isin(b, x+5, y+140) and isin(b, x+49, y+140):
-            return 3, 4
-        if isin(b, x+5, y-113) and isin(b, x+49, y-113) and isin(b, x+5, y+167) and isin(b, x+49, y+167):
-            return 3, 5
+            return [[not isin(b, x-27, y-54), not isin(b, x+27, y-54), not isin(b, x+81, y-54), False, False], [not isin(b, x-27, y), not isin(b, x+27, y), not isin(b, x+81, y), False, False], [not isin(b, x-27, y+54), not isin(b, x+27, y+54), not isin(b, x+81, y+54), False, False], [not isin(b, x-27, y+108), not isin(b, x+27, y+108), not isin(b, x+81, y+108), False, False], [False, False, False, False, False]]
     if isin(b, x-86, y+5) and isin(b, x-86, y+49) and isin(b, x+140, y+5) and isin(b, x+140, y+49): #4xX
         if isin(b, x+5, y-5) and isin(b, x+49, y-5) and isin(b, x+5, y+59) and isin(b, x+49, y+59):
-            return 4, 1
+            return [[True, True, True, True, False], [False, False, False, False, False], [False, False, False, False, False], [False, False, False, False, False], [False, False, False, False, False]]
         if isin(b, x+5, y-32) and isin(b, x+49, y-32) and isin(b, x+5, y+86) and isin(b, x+49, y+86):
-            return 4, 2
+            return [[not isin(b, x-54, y), not isin(b, x, y), not isin(b, x+54, y), not isin(b, x+108, y), False], [not isin(b, x-54, y+54), not isin(b, x, y+54), not isin(b, x+54, y+54), not isin(b, x+108, y+54), False], [False, False, False, False, False], [False, False, False, False, False], [False, False, False, False, False]]
         if isin(b, x+5, y-59) and isin(b, x+49, y-59) and isin(b, x+5, y+113) and isin(b, x+49, y+113):
-            return 4, 3
-        if isin(b, x+5, y-86) and isin(b, x+49, y-86) and isin(b, x+5, y+140) and isin(b, x+49, y+140):
-            return 4, 4
-        if isin(b, x+5, y-113) and isin(b, x+49, y-113) and isin(b, x+5, y+167) and isin(b, x+49, y+167):
-            return 4, 5
+            return [[not isin(b, x-54, y-27), not isin(b, x, y-27), not isin(b, x+54, y-27), not isin(b, x+108, y-27), False], [not isin(b, x-54, y+27), not isin(b, x, y+27), not isin(b, x+54, y+27), not isin(b, x+108, y+27), False], [not isin(b, x-54, y+81), not isin(b, x, y+81), not isin(b, x+54, y+81), not isin(b, x+108, y+81), False], [False, False, False, False, False], [False, False, False, False, False]]
     if isin(b, x-113, y+5) and isin(b, x-113, y+49) and isin(b, x+167, y+5) and isin(b, x+167, y+49): #5xX
         if isin(b, x+5, y-5) and isin(b, x+49, y-5) and isin(b, x+5, y+59) and isin(b, x+49, y+59):
-            return 5, 1
+            return [[True, True, True, True, True], [False, False, False, False, False], [False, False, False, False, False], [False, False, False, False, False], [False, False, False, False, False]]
         if isin(b, x+5, y-32) and isin(b, x+49, y-32) and isin(b, x+5, y+86) and isin(b, x+49, y+86):
-            return 5, 2
-        if isin(b, x+5, y-59) and isin(b, x+49, y-59) and isin(b, x+5, y+113) and isin(b, x+49, y+113):
-            return 5, 3
-        if isin(b, x+5, y-86) and isin(b, x+49, y-86) and isin(b, x+5, y+140) and isin(b, x+49, y+140):
-            return 5, 4
-        if isin(b, x+5, y-113) and isin(b, x+49, y-113) and isin(b, x+5, y+167) and isin(b, x+49, y+167):
-            return 5, 5
+            return [[not isin(b, x-81, y), not isin(b, x-27, y), not isin(b, x+27, y), not isin(b, x+81, y), not isin(b, x+135, y)], [not isin(b, x-81, y+54), not isin(b, x-27, y+54), not isin(b, x+27, y+54), not isin(b, x+81, y+54), not isin(b, x+135, y+54)], [False, False, False, False, False], [False, False, False, False, False], [False, False, False, False, False]]
 
 
 def board_to_number_array(filename='screen.png'):
@@ -240,15 +228,17 @@ def main():
     # number_array = board_to_number_array()
     # for row in number_array:
     #     print(row)
-    # board = cv2.imread('screen.png')
-    # for i in range(1, 4):
-    #     array = shape(board, i)
-    #     if array is not None:
-    #         for row in array:
-    #             print(row)
-    #     print("\n\n\n")
+    board = cv2.imread('screen.png')
+    for i in range(1, 4):
+        array = shape(board, i)
+        if array is not None:
+            for row in array:
+                print(row)
+        else:
+            print(None)
+        print("\n\n\n")
     #swipe(500, 200, 500, 300, 1)
-    sending()
+    #sending()
 
 if __name__ == "__main__":
     main()
