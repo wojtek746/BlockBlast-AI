@@ -1,14 +1,9 @@
-import subprocess
 import time
+import torch
 import os
 import cv2
 import numpy as np
-import pytesseract
-import torch
 from PIL import Image
-from learnNumberAI import NumberNet
-
-pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
 proc = None
 
@@ -16,11 +11,20 @@ fragments = []
 coords = []
 sent = {}
 
-device = torch.device("cpu")
-numberAI = NumberNet().to(device)
+device, numberAI = None, None
+def init_number_ai():
+    import pytesseract
+    from learnNumberAI import NumberNet
 
-numberAI.load_state_dict(torch.load("number_net.pth", map_location=device))
-numberAI.eval()
+    global device, numberAI
+
+    pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+
+    device = torch.device("cpu")
+    numberAI = NumberNet().to(device)
+
+    numberAI.load_state_dict(torch.load("number_net.pth", map_location=device))
+    numberAI.eval()
 
 def tap(x, y):
     os.system(f"adb shell input tap {str(x)} {str(y)}")
@@ -115,6 +119,84 @@ def number(fragment):
 
     return int(predicted.item())
 
+blue = [(148, 81, 58), (148, 85, 58), (148, 85, 66), (140, 81, 58), (140, 73, 49), (132, 69, 49), (140, 77, 58), (132, 65, 41), (132, 65, 49), (140, 77, 49), (156, 85, 66)]
+
+def isin(board, x, y):
+    global blue
+    return tuple(board[y, x]) in blue
+
+def shape(b, n):
+    global blue
+    match(n):
+        case 1:
+            x = 198
+        case 2:
+            x = 513
+        case 3:
+            x = 828
+        case _:
+            return None
+    y = 1822
+
+    if isin(b, x+5, y+5) and isin(b, x+49, y+5) and isin(b, x+5, y+49) and isin(b, x+49, y+49):
+        return None
+
+    if isin(b, x-5, y+5) and isin(b, x-5, y+49) and isin(b, x+59, y+5) and isin(b, x+59, y+49): #1xX
+        if isin(b, x+5, y-5) and isin(b, x+49, y-5) and isin(b, x+5, y+59) and isin(b, x+49, y+59):
+            return 1, 1
+        if isin(b, x+5, y-32) and isin(b, x+49, y-32) and isin(b, x+5, y+86) and isin(b, x+49, y+86):
+            return 1, 2
+        if isin(b, x+5, y-59) and isin(b, x+49, y-59) and isin(b, x+5, y+113) and isin(b, x+49, y+113):
+            return 1, 3
+        if isin(b, x+5, y-86) and isin(b, x+49, y-86) and isin(b, x+5, y+140) and isin(b, x+49, y+140):
+            return 1, 4
+        if isin(b, x+5, y-113) and isin(b, x+49, y-113) and isin(b, x+5, y+167) and isin(b, x+49, y+167):
+            return 1, 5
+    if isin(b, x-32, y+5) and isin(b, x-32, y+49) and isin(b, x+86, y+5) and isin(b, x+86, y+49): #2xX
+        if isin(b, x+5, y-5) and isin(b, x+49, y-5) and isin(b, x+5, y+59) and isin(b, x+49, y+59):
+            return 2, 1
+        if isin(b, x+5, y-32) and isin(b, x+49, y-32) and isin(b, x+5, y+86) and isin(b, x+49, y+86):
+            return 2, 2
+        if isin(b, x+5, y-59) and isin(b, x+49, y-59) and isin(b, x+5, y+113) and isin(b, x+49, y+113):
+            return 2, 3
+        if isin(b, x+5, y-86) and isin(b, x+49, y-86) and isin(b, x+5, y+140) and isin(b, x+49, y+140):
+            return 2, 4
+        if isin(b, x+5, y-113) and isin(b, x+49, y-113) and isin(b, x+5, y+167) and isin(b, x+49, y+167):
+            return 2, 5
+    if isin(b, x-59, y+5) and isin(b, x-59, y+49) and isin(b, x+113, y+5) and isin(b, x+113, y+49): #3xX
+        if isin(b, x+5, y-5) and isin(b, x+49, y-5) and isin(b, x+5, y+59) and isin(b, x+49, y+59):
+            return 3, 1
+        if isin(b, x+5, y-32) and isin(b, x+49, y-32) and isin(b, x+5, y+86) and isin(b, x+49, y+86):
+            return 3, 2
+        if isin(b, x+5, y-59) and isin(b, x+49, y-59) and isin(b, x+5, y+113) and isin(b, x+49, y+113):
+            return 3, 3
+        if isin(b, x+5, y-86) and isin(b, x+49, y-86) and isin(b, x+5, y+140) and isin(b, x+49, y+140):
+            return 3, 4
+        if isin(b, x+5, y-113) and isin(b, x+49, y-113) and isin(b, x+5, y+167) and isin(b, x+49, y+167):
+            return 3, 5
+    if isin(b, x-86, y+5) and isin(b, x-86, y+49) and isin(b, x+140, y+5) and isin(b, x+140, y+49): #4xX
+        if isin(b, x+5, y-5) and isin(b, x+49, y-5) and isin(b, x+5, y+59) and isin(b, x+49, y+59):
+            return 4, 1
+        if isin(b, x+5, y-32) and isin(b, x+49, y-32) and isin(b, x+5, y+86) and isin(b, x+49, y+86):
+            return 4, 2
+        if isin(b, x+5, y-59) and isin(b, x+49, y-59) and isin(b, x+5, y+113) and isin(b, x+49, y+113):
+            return 4, 3
+        if isin(b, x+5, y-86) and isin(b, x+49, y-86) and isin(b, x+5, y+140) and isin(b, x+49, y+140):
+            return 4, 4
+        if isin(b, x+5, y-113) and isin(b, x+49, y-113) and isin(b, x+5, y+167) and isin(b, x+49, y+167):
+            return 4, 5
+    if isin(b, x-113, y+5) and isin(b, x-113, y+49) and isin(b, x+167, y+5) and isin(b, x+167, y+49): #5xX
+        if isin(b, x+5, y-5) and isin(b, x+49, y-5) and isin(b, x+5, y+59) and isin(b, x+49, y+59):
+            return 5, 1
+        if isin(b, x+5, y-32) and isin(b, x+49, y-32) and isin(b, x+5, y+86) and isin(b, x+49, y+86):
+            return 5, 2
+        if isin(b, x+5, y-59) and isin(b, x+49, y-59) and isin(b, x+5, y+113) and isin(b, x+49, y+113):
+            return 5, 3
+        if isin(b, x+5, y-86) and isin(b, x+49, y-86) and isin(b, x+5, y+140) and isin(b, x+49, y+140):
+            return 5, 4
+        if isin(b, x+5, y-113) and isin(b, x+49, y-113) and isin(b, x+5, y+167) and isin(b, x+49, y+167):
+            return 5, 5
+
 def board_to_number_array(filename='screen.png'):
     xs = [94,213,333,452,571,690,809,928]
     ys = [644,763,882,1002,1121,1240,1360,1479]
@@ -153,9 +235,13 @@ def main():
     # bool_array = board_to_bool_array()
     # for row in bool_array:
     #     print(row)
-    number_array = board_to_number_array()
-    for row in number_array:
-        print(row)
+    # number_array = board_to_number_array()
+    # for row in number_array:
+    #     print(row)
+    board_img = cv2.imread('screen.png')
+    print(shape(board_img, 1))
+    print(shape(board_img, 2))
+    print(shape(board_img, 3))
     #swipe(500, 200, 500, 300, 1)
     #sending()
 
