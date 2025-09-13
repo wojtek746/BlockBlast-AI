@@ -143,33 +143,33 @@ def shape(b, n):
 
     if isin(b, x-5, y+5) and isin(b, x-5, y+49) and isin(b, x+59, y+5) and isin(b, x+59, y+49): #1xX
         if isin(b, x+5, y-5) and isin(b, x+49, y-5) and isin(b, x+5, y+59) and isin(b, x+49, y+59):
-            return 1, 1
+            return [[True, False, False, False, False], [False, False, False, False, False], [False, False, False, False, False], [False, False, False, False, False], [False, False, False, False, False]]
         if isin(b, x+5, y-32) and isin(b, x+49, y-32) and isin(b, x+5, y+86) and isin(b, x+49, y+86):
-            return 1, 2
+            return [[True, False, False, False, False], [True, False, False, False, False], [False, False, False, False, False], [False, False, False, False, False], [False, False, False, False, False]]
         if isin(b, x+5, y-59) and isin(b, x+49, y-59) and isin(b, x+5, y+113) and isin(b, x+49, y+113):
-            return 1, 3
+            return [[True, False, False, False, False], [True, False, False, False, False], [True, False, False, False, False], [False, False, False, False, False], [False, False, False, False, False]]
         if isin(b, x+5, y-86) and isin(b, x+49, y-86) and isin(b, x+5, y+140) and isin(b, x+49, y+140):
-            return 1, 4
+            return [[True, False, False, False, False], [True, False, False, False, False], [True, False, False, False, False], [True, False, False, False, False], [False, False, False, False, False]]
         if isin(b, x+5, y-113) and isin(b, x+49, y-113) and isin(b, x+5, y+167) and isin(b, x+49, y+167):
-            return 1, 5
+            return [[True, False, False, False, False], [True, False, False, False, False], [True, False, False, False, False], [True, False, False, False, False], [True, False, False, False, False]]
     if isin(b, x-32, y+5) and isin(b, x-32, y+49) and isin(b, x+86, y+5) and isin(b, x+86, y+49): #2xX
         if isin(b, x+5, y-5) and isin(b, x+49, y-5) and isin(b, x+5, y+59) and isin(b, x+49, y+59):
-            return 2, 1
+            return [[True, True, False, False, False], [False, False, False, False, False], [False, False, False, False, False], [False, False, False, False, False], [False, False, False, False, False]]
         if isin(b, x+5, y-32) and isin(b, x+49, y-32) and isin(b, x+5, y+86) and isin(b, x+49, y+86):
-            return 2, 2
+            return [[not isin(b, x, y), not isin(b, x+54, y), False, False, False], [not isin(b, x, y+54), not isin(b, x+54, y+54), False, False, False], [False, False, False, False, False], [False, False, False, False, False], [False, False, False, False, False]]
         if isin(b, x+5, y-59) and isin(b, x+49, y-59) and isin(b, x+5, y+113) and isin(b, x+49, y+113):
-            return 2, 3
+            return [[not isin(b, x, y-27), not isin(b, x+54, y-27), False, False, False], [not isin(b, x, y+27), not isin(b, x+54, y+27), False, False, False], [not isin(b, x, y+81), not isin(b, x+54, y+81), False, False, False], [False, False, False, False, False], [False, False, False, False, False]]
         if isin(b, x+5, y-86) and isin(b, x+49, y-86) and isin(b, x+5, y+140) and isin(b, x+49, y+140):
-            return 2, 4
+            return [[not isin(b, x, y-54), not isin(b, x+54, y-54), False, False, False], [not isin(b, x, y), not isin(b, x+54, y), False, False, False], [not isin(b, x, y+54), not(b, x+54, y+54), False, False, False], [not isin(b, x, y+108), not isin(b, x+54, y+108), False, False, False], [False, False, False, False, False]]
         if isin(b, x+5, y-113) and isin(b, x+49, y-113) and isin(b, x+5, y+167) and isin(b, x+49, y+167):
-            return 2, 5
+            return [[not isin(b, x, y-81), not isin(b, x+54, y-81), False, False, False], [not isin(b, x, y-27), not isin(b, x+54, y-27), False, False, False], [not isin(b, x, y+27), not(b, x+54, y+27), False, False, False], [not isin(b, x, y+81), not isin(b, x+54, y+81), False, False, False], [not isin(b, x, y+135), not isin(b, x+54, y+135), False, False, False]]
     if isin(b, x-59, y+5) and isin(b, x-59, y+49) and isin(b, x+113, y+5) and isin(b, x+113, y+49): #3xX
         if isin(b, x+5, y-5) and isin(b, x+49, y-5) and isin(b, x+5, y+59) and isin(b, x+49, y+59):
-            return 3, 1
+            return [[True, True, True, False, False], [False, False, False, False, False], [False, False, False, False, False], [False, False, False, False, False], [False, False, False, False, False]]
         if isin(b, x+5, y-32) and isin(b, x+49, y-32) and isin(b, x+5, y+86) and isin(b, x+49, y+86):
-            return 3, 2
+            return [[not isin(b, x-27, y), not isin(b, x+27, y), not isin(b, x+81, y), False, False], [not isin(b, x-27, y+54), not isin(b, x+27, y+54), not isin(b, x+81, y+54), False, False], [False, False, False, False, False], [False, False, False, False, False], [False, False, False, False, False]]
         if isin(b, x+5, y-59) and isin(b, x+49, y-59) and isin(b, x+5, y+113) and isin(b, x+49, y+113):
-            return 3, 3
+            return [[not isin(b, x-27, y-27), not isin(b, x+27, y-27), not isin(b, x+81, y-27), False, False], [not isin(b, x-27, y+27), not isin(b, x+27, y+27), not isin(b, x+81, y+27), False, False], [not isin(b, x-27, y+81), not isin(b, x+27, y+81), not isin(b, x+81, y+81), False, False], [False, False, False, False, False], [False, False, False, False, False]]
         if isin(b, x+5, y-86) and isin(b, x+49, y-86) and isin(b, x+5, y+140) and isin(b, x+49, y+140):
             return 3, 4
         if isin(b, x+5, y-113) and isin(b, x+49, y-113) and isin(b, x+5, y+167) and isin(b, x+49, y+167):
@@ -196,6 +196,7 @@ def shape(b, n):
             return 5, 4
         if isin(b, x+5, y-113) and isin(b, x+49, y-113) and isin(b, x+5, y+167) and isin(b, x+49, y+167):
             return 5, 5
+
 
 def board_to_number_array(filename='screen.png'):
     xs = [94,213,333,452,571,690,809,928]
@@ -235,15 +236,19 @@ def main():
     # bool_array = board_to_bool_array()
     # for row in bool_array:
     #     print(row)
+    # init_number_ai()
     # number_array = board_to_number_array()
     # for row in number_array:
     #     print(row)
-    board_img = cv2.imread('screen.png')
-    print(shape(board_img, 1))
-    print(shape(board_img, 2))
-    print(shape(board_img, 3))
+    # board = cv2.imread('screen.png')
+    # for i in range(1, 4):
+    #     array = shape(board, i)
+    #     if array is not None:
+    #         for row in array:
+    #             print(row)
+    #     print("\n\n\n")
     #swipe(500, 200, 500, 300, 1)
-    #sending()
+    sending()
 
 if __name__ == "__main__":
     main()
