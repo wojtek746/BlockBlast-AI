@@ -125,7 +125,7 @@ def isin(board, x, y):
     global blue
     return tuple(board[y, x]) in blue
 
-def shape(b, n):
+def array_of_shape(b, n):
     global blue
     match(n):
         case 1:
@@ -186,15 +186,14 @@ def shape(b, n):
             return [[not isin(b, x-81, y), not isin(b, x-27, y), not isin(b, x+27, y), not isin(b, x+81, y), not isin(b, x+135, y)], [not isin(b, x-81, y+54), not isin(b, x-27, y+54), not isin(b, x+27, y+54), not isin(b, x+81, y+54), not isin(b, x+135, y+54)], [False, False, False, False, False], [False, False, False, False, False], [False, False, False, False, False]]
 
 
-def board_to_number_array(filename='screen.png'):
+def board_to_number_array(board):
     xs = [94,213,333,452,571,690,809,928]
     ys = [644,763,882,1002,1121,1240,1360,1479]
-    board_img = cv2.imread(filename)
     result = []
     for y in ys:
         row = []
         for x in xs:
-            fragment = board_img[y:y + 56, x:x + 57]
+            fragment = board[y:y + 56, x:x + 57]
             n = number(fragment)
             if n == 0:
                 row.append(0)
@@ -203,10 +202,9 @@ def board_to_number_array(filename='screen.png'):
         result.append(row)
     return result
 
-def board_to_bool_array(filename='screen.png'):
+def board_to_bool_array(board):
     start_x = 120
     start_y = 670
-    board_img = cv2.imread(filename)
     blank = [66, 36, 25]
     result = []
     for i in range(8):
@@ -214,29 +212,46 @@ def board_to_bool_array(filename='screen.png'):
         for j in range(8):
             x = start_x + j * 120
             y = start_y + i * 120
-            rgb = board_img[y, x]
+            rgb = board[y, x]
             row.append(not np.array_equal(rgb, blank))
         result.append(row)
     return result
 
 def main():
     get_screenshot()
-    # bool_array = board_to_bool_array()
+    board = cv2.imread('screen.png')
+    bool_array = board_to_bool_array(board)
     # for row in bool_array:
     #     print(row)
-    # init_number_ai()
-    # number_array = board_to_number_array()
+    init_number_ai()
+    number_array = board_to_number_array(board)
     # for row in number_array:
     #     print(row)
-    board = cv2.imread('screen.png')
-    for i in range(1, 4):
-        array = shape(board, i)
-        if array is not None:
-            for row in array:
-                print(row)
-        else:
-            print(None)
-        print("\n\n\n")
+    shapes = []
+    shapes.append(array_of_shape(board, 1))
+    shapes.append(array_of_shape(board, 2))
+    shapes.append(array_of_shape(board, 3))
+
+    for x in range(8):
+        for y in range(8):
+            for shape in shapes:
+                possible = True
+                for i, row in enumerate(shape):
+                    for j, r in enumerate(row):
+                        if r:
+                            if i+y >= 8 or j+x >= 8:
+                                possible = False
+                                break
+                            if bool_array[i+y][j+x]:
+                                possible = False
+                                break
+                    if not possible:
+                        break
+                if possible:
+                    pass
+                    #check probability from AI
+
+
     #swipe(500, 200, 500, 300, 1)
     #sending()
 
