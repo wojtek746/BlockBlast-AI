@@ -4,3 +4,4 @@ response.py
 __pycache__
 screen
 screen.png
+ai_training_state.pt
