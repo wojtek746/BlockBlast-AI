@@ -30,9 +30,9 @@ class GameAI:
 
         self.memory = deque(maxlen=10000)
         self.epsilon = 1.0
-        self.epsilon_decay = 0.995
+        self.epsilon_decay = 0.9995
         self.epsilon_min = 0.01
-        self.batch_size = 32
+        self.batch_size = 128
         self.gamma = 0.99
         self.memory_file = memory_file
         self.load_training_state()
@@ -80,17 +80,11 @@ class GameAI:
 
         batch = random.sample(self.memory, self.batch_size)
 
-        states_np = np.array([e[0] for e in batch])
-        actions_np = np.array([e[1] for e in batch])
-        rewards_np = np.array([e[2] for e in batch])
-        next_states_np = np.array([e[3] for e in batch])
-        dones_np = np.array([e[4] for e in batch])
-
-        states = torch.FloatTensor(states_np).to(self.device)
-        actions = torch.LongTensor(actions_np).to(self.device)
-        rewards = torch.FloatTensor(rewards_np).to(self.device)
-        next_states = torch.FloatTensor(next_states_np).to(self.device)
-        dones = torch.BoolTensor(dones_np).to(self.device)
+        states = torch.tensor([e[0] for e in batch], dtype=torch.float32, device=self.device)
+        actions = torch.tensor([e[1] for e in batch], dtype=torch.long, device=self.device)
+        rewards = torch.tensor([e[2] for e in batch], dtype=torch.float32, device=self.device)
+        next_states = torch.tensor([e[3] for e in batch], dtype=torch.float32, device=self.device)
+        dones = torch.tensor([e[4] for e in batch], dtype=torch.bool, device=self.device)
 
         current_q_values = self.q_network(states).gather(1, actions.unsqueeze(1))
         next_q_values = self.target_network(next_states).max(1)[0].detach()

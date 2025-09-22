@@ -32,7 +32,7 @@ def train_ai():
                 print("nie udało się postawić kształtu")
                 continue
 
-            reward = game.score - old_score + 0.1 + np.sum(~game.board) * 0.01 + game.combo * 0.5
+            reward = game.score - old_score + game.combo + 0.1
 
             done = game.is_game_over()
             if done:
@@ -45,12 +45,12 @@ def train_ai():
                 ai.replay()
 
         scores.append(game.score)
-        ai.replay()
 
-        if episode % 100 == 0:
-            ai.update_target_network()
-            avg_score = np.mean(scores[-100:])
-            print(f"Episode {episode}, Average Score: {avg_score:.2f}, Epsilon: {ai.epsilon:.3f}, time: {time() - t}")
+        if episode % 50 == 0:
+            if episode % 500 == 0:
+                ai.update_target_network()
+            recent_scores = scores[-50:]
+            print(f"Episode {episode}, Avg: {np.mean(recent_scores):.1f}, Max: {max(recent_scores):.1f}, Min: {min(recent_scores):.1f}, Std: {np.std(recent_scores):.1f}, Epsilon: {ai.epsilon:.3f}, Time: {time() - t}")
             t = time()
 
     return ai, scores

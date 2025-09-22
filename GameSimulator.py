@@ -170,7 +170,7 @@ class GameSimulator:
     def start(self):
         for i in range(8):
             for j in range(8):
-                self.board[i][j] = randint(0, 10) == 0
+                self.board[i][j] = randint(0, 20) == 0
         self.reload_shop()
 
         lines_cleared = self.clear_full_lines()
