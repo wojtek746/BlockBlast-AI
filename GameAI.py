@@ -32,7 +32,7 @@ class GameAI:
         self.epsilon_decay = 0.995
         self.epsilon_min = 0.01
         self.batch_size = 32
-        self.gamma = 0.95
+        self.gamma = 0.99
         self.memory_file = memory_file
         self.load_training_state()
 
