@@ -84,7 +84,7 @@ class PipelinedTrainer:
         futures = [self.executor.submit(run_single_episode, q_network_state, current_epsilon) for _ in range(self.batch_episodes)]
 
         return futures
-
+    
     def collect_simulation_results(self, futures):
         batch_memories = []
         batch_scores = []
