@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 import random
 from collections import deque
+import pickle
 
 class DQN(nn.Module):
     def __init__(self, input_size=205, hidden_size=1024, output_size=192):
@@ -21,7 +22,7 @@ class DQN(nn.Module):
         return self.network(x)
 
 class GameAI:
-    def __init__(self, learning_rate=0.001):
+    def __init__(self, learning_rate=0.001, memory_file="ai_training_state.pt"):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.q_network = DQN().to(self.device)
         self.target_network = DQN().to(self.device)
@@ -33,9 +34,30 @@ class GameAI:
         self.epsilon_min = 0.01
         self.batch_size = 32
         self.gamma = 0.95
+        self.memory_file = memory_file
+        self.load_training_state()
 
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
+
+    def save_training_state(self):
+        state = {
+            'epsilon': self.epsilon,
+            'memory': list(self.memory),
+            'q_network_state': self.q_network.state_dict(),
+            'target_network_state': self.target_network.state_dict()
+        }
+        torch.save(state, self.memory_file)
+
+    def load_training_state(self):
+        try:
+            state = torch.load(self.memory_file)
+            self.epsilon = state['epsilon']
+            self.memory.extend(state['memory'])
+            self.q_network.load_state_dict(state['q_network_state'])
+            self.target_network.load_state_dict(state['target_network_state'])
+        except FileNotFoundError:
+            print("Nowy trening")
 
     def act(self, state, valid_actions):
         if random.random() <= self.epsilon:
