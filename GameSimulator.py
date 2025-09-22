@@ -426,6 +426,7 @@ class GameSimulator:
     def get_state(self):
         row_fullness = [np.sum(self.board[i]) for i in range(8)]
         col_fullness = [np.sum(self.board[:, j]) for j in range(8)]
+        valid = self.get_all_valid_actions()
         return np.concatenate([
             self.board.flatten().astype(float), #64
             [np.sum(self.board[i]) / 8 for i in range(8)], #8
@@ -436,7 +437,7 @@ class GameSimulator:
             self.shop[0].flatten().astype(float), #25
             self.shop[1].flatten().astype(float), #25
             self.shop[2].flatten().astype(float), #25
-            [0 if self.combo == 0 else 1 - 1 / self.combo, 0 if self.is_cleared_line else 1, 1 / len(self.get_all_valid_actions())], #3
+            [0 if self.combo == 0 else 1 - 1 / self.combo, 0 if self.is_cleared_line else 1, 0 if len(valid) == 0 else 1 / len(valid)], #3
         ])
 
     def copy(self):

@@ -77,14 +77,14 @@ class PipelinedTrainer:
 
         self.executor = ProcessPoolExecutor(max_workers=num_workers)
 
-    def start_simulation_batch(self, batch_id):
+    def start_simulation_batch(self, episode_num):
         q_network_state = {k: v.cpu() for k, v in self.ai.q_network.state_dict().items()}
         current_epsilon = self.ai.epsilon
 
-        futures = [self.executor.submit(run_single_episode, q_network_state, current_epsilon) for _ in range(self.batch_episodes)]
+        futures = [self.executor.submit(run_single_episode, q_network_state, current_epsilon, episode_num) for _ in range(self.batch_episodes)]
 
         return futures
-    
+
     def collect_simulation_results(self, futures):
         batch_memories = []
         batch_scores = []
