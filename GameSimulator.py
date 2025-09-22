@@ -1,5 +1,5 @@
 import numpy as np
-from random import randint, shuffle, choices
+from random import randint, shuffle, choices, uniform, sample
 from typing import List, Tuple
 
 class GameSimulator:
@@ -132,6 +132,27 @@ class GameSimulator:
              [False, True, False, False, False],
              [False, False, False, False, False],
              [False, False, False, False, False]], #medium (10)
+            #large L-shapes
+            [[True, True, True, False, False],
+             [True, False, False, False, False],
+             [True, False, False, False, False],
+             [False, False, False, False, False],
+             [False, False, False, False, False]],
+            [[True, False, False, False, False],
+             [True, False, False, False, False],
+             [True, True, True, False, False],
+             [False, False, False, False, False],
+             [False, False, False, False, False]],
+            [[True, True, True, False, False],
+             [False, False, True, False, False],
+             [False, False, True, False, False],
+             [False, False, False, False, False],
+             [False, False, False, False, False]],
+            [[False, False, True, False, False],
+             [False, False, True, False, False],
+             [True, True, True, False, False],
+             [False, False, False, False, False],
+             [False, False, False, False, False]],
             #2x3
             [[True, True, True, False, False],
              [True, True, True, False, False],
@@ -155,7 +176,7 @@ class GameSimulator:
              [True, False, False, False, False],
              [True, False, False, False, False],
              [True, False, False, False, False],
-             [True, False, False, False, False]], #large (4)
+             [True, False, False, False, False]], #large (8)
             #3x3
             [[True, True, True, False, False],
              [True, True, True, False, False],
@@ -167,10 +188,22 @@ class GameSimulator:
         self.line_multipliers = [1, 2, 6, 12, 20]
         self.shop = [np.zeros((5, 5), dtype=bool), np.zeros((5, 5), dtype=bool), np.zeros((5, 5), dtype=bool)]
 
-    def start(self):
-        for i in range(8):
-            for j in range(8):
-                self.board[i][j] = randint(0, 20) == 0
+    def start(self, episode):
+        if episode < 20000:
+            ratio = 0.1 + (episode / 20000) * 0.1
+        elif episode < 50000:
+            ratio = 0.2 + (episode - 20000) / 30000 * 0.2
+        elif episode < 80000:
+            ratio = 0.4 + (episode - 50000) / 30000   * 0.2
+        else:
+            ratio = uniform(0.1, 0.7)
+
+        target_cells = int(64 * ratio)
+        positions = [(i, j) for i in range(8) for j in range(8)]
+        filled_positions = sample(positions, target_cells)
+        for i, j in filled_positions:
+            self.board[i][j] = True
+
         self.reload_shop()
 
         lines_cleared = self.clear_full_lines()
@@ -194,8 +227,8 @@ class GameSimulator:
         very_small_shapes = self.shapes[1:5]
         small_shapes = self.shapes[5:12]
         medium_shapes = self.shapes[12:22]
-        large_shapes = self.shapes[22:26]
-        very_large_shapes = self.shapes[26:27]
+        large_shapes = self.shapes[22:30]
+        very_large_shapes = self.shapes[30:31]
 
         if fill_ratio > 0.9:
             suitable_shapes = very_small_shapes
@@ -391,13 +424,19 @@ class GameSimulator:
         return True
 
     def get_state(self):
+        row_fullness = [np.sum(self.board[i]) for i in range(8)]
+        col_fullness = [np.sum(self.board[:, j]) for j in range(8)]
         return np.concatenate([
             self.board.flatten().astype(float), #64
+            [np.sum(self.board[i]) / 8 for i in range(8)], #8
+            [np.sum(self.board[:, j]) / 8 for j in range(8)], #8
+            [1 if sum >= 6 else 0 for sum in row_fullness], #8
+            [1 if sum >= 6 else 0 for sum in col_fullness], #8
             np.zeros(64, dtype=float), #64 #dla przyszłych liczb na kafelkach
             self.shop[0].flatten().astype(float), #25
             self.shop[1].flatten().astype(float), #25
             self.shop[2].flatten().astype(float), #25
-            [0 if self.combo == 0 else 1 - 1 / self.combo, 0 if self.is_cleared_line else 1], #2
+            [0 if self.combo == 0 else 1 - 1 / self.combo, 0 if self.is_cleared_line else 1, 1 / len(self.get_all_valid_actions())], #3
         ])
 
     def copy(self):

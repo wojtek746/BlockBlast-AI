@@ -6,32 +6,35 @@ from collections import deque
 import numpy as np
 
 class DQN(nn.Module):
-    def __init__(self, input_size=205, hidden_size=1024, output_size=192):
+    def __init__(self, input_size=238, hidden_size=4096, output_size=192):
         super(DQN, self).__init__()
         self.network = nn.Sequential(
             nn.Linear(input_size, hidden_size),
             nn.ReLU(),
+            nn.Dropout(0.1),
             nn.Linear(hidden_size, hidden_size),
             nn.ReLU(),
-            nn.Linear(hidden_size, hidden_size),
+            nn.Dropout(0.1),
+            nn.Linear(hidden_size, hidden_size // 2),
             nn.ReLU(),
-            nn.Linear(hidden_size, output_size)
+            nn.Linear(hidden_size // 2, hidden_size // 4),
+            nn.ReLU(),
+            nn.Linear(hidden_size // 4, output_size)
         )
 
     def forward(self, x):
         return self.network(x)
 
 class GameAI:
-    def __init__(self, learning_rate=0.001, memory_file="ai_training_state.pt"):
+    def __init__(self, learning_rate=0.00005, memory_file="ai_training_state.pt"):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.q_network = DQN().to(self.device)
         self.target_network = DQN().to(self.device)
         self.optimizer = optim.Adam(self.q_network.parameters(), lr=learning_rate)
 
-        self.memory = deque(maxlen=10000)
+        self.memory = deque(maxlen=100000)
         self.epsilon = 1.0
-        self.epsilon_decay = 0.99995
-        self.epsilon_min = 0.01
+        self.epsilon_min = 0.00001
         self.batch_size = 512
         self.gamma = 0.99
         self.memory_file = memory_file
@@ -94,10 +97,10 @@ class GameAI:
 
         self.optimizer.zero_grad()
         loss.backward()
+        torch.nn.utils.clip_grad_norm_(self.q_network.parameters(), 0.5) #nie wiem, co to robi xd
         self.optimizer.step()
 
-        if self.epsilon > self.epsilon_min:
-            self.epsilon *= self.epsilon_decay
-
-    def update_target_network(self):
+    def update_target_network(self, tau=0.001):
         self.target_network.load_state_dict(self.q_network.state_dict())
+        for target_param, local_param in zip(self.target_network.parameters(), self.q_network.parameters()):
+            target_param.data.copy_(tau * local_param.data + (1.0 - tau) * target_param.data)

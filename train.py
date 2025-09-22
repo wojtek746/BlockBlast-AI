@@ -6,7 +6,7 @@ import torch
 from queue import Queue
 import threading
 
-def run_single_episode(q_network_state, epsilon):
+def run_single_episode(q_network_state, epsilon, episode_num):
     from GameAI import DQN
     import random
 
@@ -32,7 +32,7 @@ def run_single_episode(q_network_state, epsilon):
         return masked_q_values.argmax().item()
 
     game = GameSimulator()
-    game.start()
+    game.start(episode_num)
 
     episode_memory = []
 
@@ -101,13 +101,13 @@ class PipelinedTrainer:
             self.ai.remember(*memory)
 
         if len(self.ai.memory) > self.ai.batch_size:
-            training_steps = 500
+            training_steps = 20
 
             for _ in range(training_steps):
                 self.ai.replay()
 
 def update_epsilon(ai, episode):
-    epsilon_decay_episodes = 8000
+    epsilon_decay_episodes = 50000
     if episode < epsilon_decay_episodes:
         progress = episode / epsilon_decay_episodes
         ai.epsilon = max(ai.epsilon_min, 1.0 - progress * (1.0 - ai.epsilon_min))
@@ -119,7 +119,7 @@ def train_ai():
     from time import time
 
     ai = GameAI()
-    episodes = 10000
+    episodes = 100000
     scores = []
 
     num_workers = max(1, mp.cpu_count() - 10)
@@ -141,13 +141,13 @@ def train_ai():
         current_episode = episode_batch + trainer.batch_episodes
         update_epsilon(ai, current_episode)
 
-        if current_episode % 1000 == 0:
+        if current_episode % 2000 == 0:
             ai.update_target_network()
             ai.save_training_state()
 
         if current_episode % 100 == 0:
             recent_scores = scores[-100:] if len(scores) >= 100 else scores
-            print(f"Episode: {current_episode}, Avg: {np.mean(recent_scores):.1f}, Max: {max(recent_scores):.1f}, Min: {min(recent_scores):.1f}, Std: {np.std(recent_scores):.1f}, Epsilon: {ai.epsilon:.3f}, Time: {time() - t}")
+            print(f"Episode: {current_episode}, Avg: {np.mean(recent_scores):.1f}, Max: {max(recent_scores):.1f}, Min: {min(recent_scores):.1f}, Std: {np.std(recent_scores):.1f}, Epsilon: {ai.epsilon:.5f}, Time: {(time() - t):.1f}")
             t = time()
 
     trainer.executor.shutdown()
