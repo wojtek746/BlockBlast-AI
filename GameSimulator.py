@@ -250,7 +250,7 @@ class GameSimulator:
         for i in range(3):
             valid_moves = self.get_valid_moves(i)
             for row, col in valid_moves:
-                actions.append((i, row, col))
+                actions.append(i * 64 + row * 8 + col)
         return actions
 
     def is_game_over(self):
@@ -261,12 +261,12 @@ class GameSimulator:
 
     def get_state(self):
         return np.concatenate([
-            self.board.flatten().astype(float),
-            np.zeros(64, dtype=float), #dla przyszłych liczb na kafelkach
-            self.shop[0].flatten().astype(float),
-            self.shop[1].flatten().astype(float),
-            self.shop[2].flatten().astype(float),
-            [0 if self.combo == 0 else 1 - 1 / self.combo, 0 if self.is_cleared_line else 1],
+            self.board.flatten().astype(float), #64
+            np.zeros(64, dtype=float), #64 #dla przyszłych liczb na kafelkach
+            self.shop[0].flatten().astype(float), #25
+            self.shop[1].flatten().astype(float), #25
+            self.shop[2].flatten().astype(float), #25
+            [0 if self.combo == 0 else 1 - 1 / self.combo, 0 if self.is_cleared_line else 1], #2
         ])
 
     def copy(self):
