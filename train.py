@@ -54,11 +54,11 @@ def run_single_episode(q_network_state, epsilon):
             print("nie udało się postawić kształtu")
             continue
 
-        reward = game.score - old_score + game.combo + 0.1
+        reward = game.score - old_score + min(game.combo * 0.1, 2.0) + 0.05
 
         done = game.is_game_over()
         if done:
-            reward -= 20  # kara za śmierć
+            reward -= 10  # kara za śmierć
 
         next_state = game.get_state()
         episode_memory.append((state, action, reward, next_state, done))
@@ -70,7 +70,7 @@ class PipelinedTrainer:
     def __init__(self, ai, num_workers):
         self.ai = ai
         self.num_workers = num_workers
-        self.batch_episodes = num_workers * 2
+        self.batch_episodes = num_workers * 10
 
         self.simulation_queue = Queue(maxsize=2)
         self.training_queue = Queue(maxsize=2)
@@ -81,8 +81,7 @@ class PipelinedTrainer:
         q_network_state = {k: v.cpu() for k, v in self.ai.q_network.state_dict().items()}
         current_epsilon = self.ai.epsilon
 
-        futures = [self.executor.submit(run_single_episode, q_network_state, current_epsilon)
-                   for _ in range(self.batch_episodes)]
+        futures = [self.executor.submit(run_single_episode, q_network_state, current_epsilon) for _ in range(self.batch_episodes)]
 
         return futures
 
@@ -102,12 +101,13 @@ class PipelinedTrainer:
             self.ai.remember(*memory)
 
         if len(self.ai.memory) > self.ai.batch_size:
-            training_steps = max(25, len(batch_memories) // self.ai.batch_size * 5)
+            training_steps = 500
+
             for _ in range(training_steps):
                 self.ai.replay()
 
 def update_epsilon(ai, episode):
-    epsilon_decay_episodes = 5000
+    epsilon_decay_episodes = 8000
     if episode < epsilon_decay_episodes:
         progress = episode / epsilon_decay_episodes
         ai.epsilon = max(ai.epsilon_min, 1.0 - progress * (1.0 - ai.epsilon_min))
@@ -141,7 +141,7 @@ def train_ai():
         current_episode = episode_batch + trainer.batch_episodes
         update_epsilon(ai, current_episode)
 
-        if current_episode % 500 == 0:
+        if current_episode % 1000 == 0:
             ai.update_target_network()
             ai.save_training_state()
 
