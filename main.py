@@ -205,15 +205,14 @@ def board_to_number_array(board):
 def board_to_bool_array(board):
     start_x = 120
     start_y = 670
-    blank = [66, 36, 25]
+    blanks = [(25, 36, 66), (66, 61, 123)]
     result = []
     for i in range(8):
         row = []
         for j in range(8):
             x = start_x + j * 120
             y = start_y + i * 120
-            rgb = board[y, x]
-            row.append(not np.array_equal(rgb, blank))
+            row.append(not tuple(board[y, x]) in blanks)
         result.append(row)
     return result
 
@@ -221,35 +220,35 @@ def main():
     get_screenshot()
     board = cv2.imread('screen.png')
     bool_array = board_to_bool_array(board)
-    # for row in bool_array:
-    #     print(row)
+    for row in bool_array:
+        print(row)
     init_number_ai()
     number_array = board_to_number_array(board)
-    # for row in number_array:
-    #     print(row)
-    shapes = []
-    shapes.append(array_of_shape(board, 1))
-    shapes.append(array_of_shape(board, 2))
-    shapes.append(array_of_shape(board, 3))
+    for row in number_array:
+        print(row)
+    # shapes = []
+    # shapes.append(array_of_shape(board, 1))
+    # shapes.append(array_of_shape(board, 2))
+    # shapes.append(array_of_shape(board, 3))
 
-    for x in range(8):
-        for y in range(8):
-            for shape in shapes:
-                possible = True
-                for i, row in enumerate(shape):
-                    for j, r in enumerate(row):
-                        if r:
-                            if i+y >= 8 or j+x >= 8:
-                                possible = False
-                                break
-                            if bool_array[i+y][j+x]:
-                                possible = False
-                                break
-                    if not possible:
-                        break
-                if possible:
-                    pass
-                    #check probability from AI
+    # for x in range(8):
+    #     for y in range(8):
+    #         for shape in shapes:
+    #             possible = True
+    #             for i, row in enumerate(shape):
+    #                 for j, r in enumerate(row):
+    #                     if r:
+    #                         if i+y >= 8 or j+x >= 8:
+    #                             possible = False
+    #                             break
+    #                         if bool_array[i+y][j+x]:
+    #                             possible = False
+    #                             break
+    #                 if not possible:
+    #                     break
+    #             if possible:
+    #                 pass
+    #                 #check probability from AI
 
 
     #swipe(500, 200, 500, 300, 1)
