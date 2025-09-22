@@ -39,8 +39,8 @@ punkty za dane combo za 1 linię
 1   2   3   4   5   6   7    8    9    10   11   12   13   14   15   16   17,  18   19   20
 10, 20, 30, 40, 50, 90, 105, 120, 135, 150, 220, 240, 260, 280, 300, 320, 340, 360, 380, 400
 mnożlik za ileś linii
-1, 2, 3
-1, 2, chyba 6
+1  2  3  4
+1, 2, 6, chyba trochę ponad 12
 będę pisał tylko te z rozwaleniem linii + combo będę liczył te, które się liczy do punktów, a nie które się wyświetla
 4; 19; 1; 1; 0; 5
 23; 47; 1; 2; 0; 4
@@ -63,3 +63,7 @@ będę pisał tylko te z rozwaleniem linii + combo będę liczył te, które si�
 5061; 5450; 1; 19; 0; 9
 5454; 5858; 1; 20; 0; 4
 game over
+teraz będę pisał tylko te ciekawe
+147; 453; 3; 5; 0; 6
+1859; 5083; 4; 13; 0; 4
+5372; 7478; 3; 15; 0; 6; empty (chyba +300, albo mnożnik za linie +1)
