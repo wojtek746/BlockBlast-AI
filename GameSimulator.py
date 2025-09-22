@@ -1,5 +1,5 @@
 import numpy as np
-from random import randint
+from random import randint, shuffle
 from typing import List, Tuple
 
 class GameSimulator:
@@ -21,51 +21,9 @@ class GameSimulator:
              [False, False, False, False, False],
              [False, False, False, False, False],
              [False, False, False, False, False]],
-            # 1x3
-            [[True, True, True, False, False],
-             [False, False, False, False, False],
-             [False, False, False, False, False],
-             [False, False, False, False, False],
-             [False, False, False, False, False]],
-            # 1x4
-            [[True, True, True, True, False],
-             [False, False, False, False, False],
-             [False, False, False, False, False],
-             [False, False, False, False, False],
-             [False, False, False, False, False]],
-            # 1x5
-            [[True, True, True, True, True],
-             [False, False, False, False, False],
-             [False, False, False, False, False],
-             [False, False, False, False, False],
-             [False, False, False, False, False]],
             #2x1
             [[True, False, False, False, False],
              [True, False, False, False, False],
-             [False, False, False, False, False],
-             [False, False, False, False, False],
-             [False, False, False, False, False]],
-            #3x1
-            [[True, False, False, False, False],
-             [True, False, False, False, False],
-             [True, False, False, False, False],
-             [False, False, False, False, False],
-             [False, False, False, False, False]],
-            #4x1
-            [[True, False, False, False, False],
-             [True, False, False, False, False],
-             [True, False, False, False, False],
-             [True, False, False, False, False],
-             [False, False, False, False, False]],
-            #5x1
-            [[True, False, False, False, False],
-             [True, False, False, False, False],
-             [True, False, False, False, False],
-             [True, False, False, False, False],
-             [True, False, False, False, False]],
-            # 2x2
-            [[True, True, False, False, False],
-             [True, True, False, False, False],
              [False, False, False, False, False],
              [False, False, False, False, False],
              [False, False, False, False, False]],
@@ -80,6 +38,57 @@ class GameSimulator:
              [True, False, False, False, False],
              [False, False, False, False, False],
              [False, False, False, False, False],
+             [False, False, False, False, False]], #very small (5)
+            # 2x2
+            [[True, True, False, False, False],
+             [True, True, False, False, False],
+             [False, False, False, False, False],
+             [False, False, False, False, False],
+             [False, False, False, False, False]],
+            #3x1
+            [[True, False, False, False, False],
+             [True, False, False, False, False],
+             [True, False, False, False, False],
+             [False, False, False, False, False],
+             [False, False, False, False, False]],
+            #small L shapes
+            [[True, True, False, False, False],
+             [True, False, False, False, False],
+             [False, False, False, False, False],
+             [False, False, False, False, False],
+             [False, False, False, False, False]],
+            [[True, True, False, False, False],
+             [False, True, False, False, False],
+             [False, False, False, False, False],
+             [False, False, False, False, False],
+             [False, False, False, False, False]],
+            [[True, False, False, False, False],
+             [True, True, False, False, False],
+             [False, False, False, False, False],
+             [False, False, False, False, False],
+             [False, False, False, False, False]],
+            [[False, True, False, False, False],
+             [True, True, False, False, False],
+             [False, False, False, False, False],
+             [False, False, False, False, False],
+             [False, False, False, False, False]],
+            # 1x3
+            [[True, True, True, False, False],
+             [False, False, False, False, False],
+             [False, False, False, False, False],
+             [False, False, False, False, False],
+             [False, False, False, False, False]], #small (7)
+            # 1x4
+            [[True, True, True, True, False],
+             [False, False, False, False, False],
+             [False, False, False, False, False],
+             [False, False, False, False, False],
+             [False, False, False, False, False]],
+            #4x1
+            [[True, False, False, False, False],
+             [True, False, False, False, False],
+             [True, False, False, False, False],
+             [True, False, False, False, False],
              [False, False, False, False, False]],
             # L-shapes
             [[True, True, True, False, False],
@@ -102,24 +111,6 @@ class GameSimulator:
              [False, True, False, False, False],
              [False, False, False, False, False],
              [False, False, False, False, False]],
-            #2x3
-            [[True, True, True, False, False],
-             [True, True, True, False, False],
-             [False, False, False, False, False],
-             [False, False, False, False, False],
-             [False, False, False, False, False]],
-            #3x2
-            [[True, True, False, False, False],
-             [True, True, False, False, False],
-             [True, True, False, False, False],
-             [False, False, False, False, False],
-             [False, False, False, False, False]],
-            #3x3
-            [[True, True, True, False, False],
-             [True, True, True, False, False],
-             [True, True, True, False, False],
-             [False, False, False, False, False],
-             [False, False, False, False, False]],
             #E-shapes
             [[True, True, True, False, False],
              [False, True, False, False, False],
@@ -140,7 +131,37 @@ class GameSimulator:
              [True, True, False, False, False],
              [False, True, False, False, False],
              [False, False, False, False, False],
+             [False, False, False, False, False]], #medium (10)
+            #2x3
+            [[True, True, True, False, False],
+             [True, True, True, False, False],
+             [False, False, False, False, False],
+             [False, False, False, False, False],
              [False, False, False, False, False]],
+            #3x2
+            [[True, True, False, False, False],
+             [True, True, False, False, False],
+             [True, True, False, False, False],
+             [False, False, False, False, False],
+             [False, False, False, False, False]],
+            # 1x5
+            [[True, True, True, True, True],
+             [False, False, False, False, False],
+             [False, False, False, False, False],
+             [False, False, False, False, False],
+             [False, False, False, False, False]],
+            #5x1
+            [[True, False, False, False, False],
+             [True, False, False, False, False],
+             [True, False, False, False, False],
+             [True, False, False, False, False],
+             [True, False, False, False, False]], #large (4)
+            #3x3
+            [[True, True, True, False, False],
+             [True, True, True, False, False],
+             [True, True, True, False, False],
+             [False, False, False, False, False],
+             [False, False, False, False, False]], #very large (1)
         ]
         self.shapes = [np.array(shape, dtype=bool) for shape in self.shapes]
         self.line_multipliers = [1, 2, 6, 12, 20]
@@ -161,12 +182,115 @@ class GameSimulator:
             self.score += 10 * multiplier
 
     def reload_shop(self):
-        for i in range(3):
-            self.shop[i] = self.shapes[randint(0, len(self.shapes) - 1)] #potem przerobić, żeby było zależne od ilości pustych kafelków
+        self.shop = self.get_suitable_shapes()
         if self.is_cleared_line:
             self.is_cleared_line = False
         else:
             self.combo = 0
+
+    def get_suitable_shapes(self):
+        fill_ratio = (64 - np.sum(~self.board)) / 64
+
+        very_small_shapes = self.shapes[1:5]
+        small_shapes = self.shapes[5:12]
+        medium_shapes = self.shapes[12:22]
+        large_shapes = self.shapes[22:26]
+        very_large_shapes = self.shapes[26:27]
+
+        if fill_ratio > 0.9:
+            suitable_shapes = very_small_shapes
+        elif fill_ratio > 0.8:
+            suitable_shapes = very_small_shapes + small_shapes
+        elif fill_ratio > 0.6:
+            suitable_shapes = small_shapes + medium_shapes
+        elif fill_ratio > 0.3:
+            suitable_shapes = small_shapes + medium_shapes + large_shapes
+        else:
+            suitable_shapes = medium_shapes + large_shapes + very_large_shapes
+
+        def get_all_positions_for_shape(shape):
+            positions = []
+            for row in range(8):
+                for col in range(8):
+                    if self.can_place_shape(shape, row, col):
+                        positions.append((row, col))
+            return positions
+
+        def positions_overlap(shape1, pos1, shape2, pos2):
+            occupied1 = set()
+            for i in range(len(shape1)):
+                for j in range(len(shape1[0])):
+                    if shape1[i][j]:
+                        occupied1.add((pos1[0] + i, pos1[1] + j))
+
+            for i in range(len(shape2)):
+                for j in range(len(shape2[0])):
+                    if shape2[i][j]:
+                        if (pos2[0] + i, pos2[1] + j) in occupied1:
+                            return True
+            return False
+
+        def has_non_overlapping_positions(shape1, positions1, shape2):
+            positions2 = get_all_positions_for_shape(shape2)
+            positions = []
+
+            for pos2 in positions2:
+                overlaps_with_any = False
+                for pos1 in positions1:
+                    if positions_overlap(shape1, pos1, shape2, pos2):
+                        positions.append(pos2)
+                        overlaps_with_any = True
+                        break
+                if not overlaps_with_any:
+                    return positions
+            return False
+
+        result_shapes = []
+        reserved_positions = []
+
+        max_attempts = 20
+        first_shape = None
+        first_positions = []
+        for attempt in range(max_attempts):
+            candidate = suitable_shapes[randint(0, len(suitable_shapes) - 1)]
+            positions = get_all_positions_for_shape(candidate)
+            if positions:
+                first_shape = candidate
+                first_positions = positions
+                result_shapes.append(candidate)
+                break
+        if not result_shapes:
+            return [self.shapes[0], self.shapes[0], self.shapes[0]]
+
+        second_shape = None
+        second_positions = []
+        for attempt in range(max_attempts):
+            candidate = suitable_shapes[randint(0, len(suitable_shapes) - 1)]
+            positions = has_non_overlapping_positions(first_shape, first_positions, candidate)
+            if positions:
+                second_shape = candidate
+                second_positions = positions
+                result_shapes.append(candidate)
+                break
+        if not second_shape:
+            return [result_shapes[0], self.shapes[0], self.shapes[0]]
+
+        third_shape = None
+        for attempt in range(max_attempts):
+            candidate = suitable_shapes[randint(0, len(suitable_shapes) - 1)]
+            pos1 = has_non_overlapping_positions(first_shape, first_positions, candidate)
+            pos2 = has_non_overlapping_positions(second_shape, second_positions, candidate)
+            if pos1 and pos2:
+                for p1 in pos1:
+                    for p2 in pos2:
+                        if p1 == p2:
+                            third_shape = candidate
+                            result_shapes.append(candidate)
+        if not third_shape:
+            result_shapes.append(self.shapes[0])
+        shuffle(result_shapes)
+
+        return result_shapes
 
     def combo_points(self, n):
         if 0 < n < 6:
