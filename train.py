@@ -1,5 +1,3 @@
-from sympy.physics.units import action
-
 from GameSimulator import GameSimulator
 from GameAI import GameAI
 import numpy as np
@@ -12,12 +10,12 @@ def train_ai():
 
     for episode in range(episodes):
         game = GameSimulator()
+        game.start()
 
-        while not game.game_over:
+        while not game.is_game_over():
             valid_actions = game.get_all_valid_actions()
 
             if not valid_actions:
-                game.game_over = True
                 break
 
             state = game.get_state()
@@ -26,16 +24,20 @@ def train_ai():
             shop_index, row, col = action // 64, (action % 64) // 8, action % 8
 
             old_score = game.score
-            game.place_shape(shop_index, row, col)
+            success = game.place_shape(shop_index, row, col)
+
+            if not success:
+                print("nie udało się postawić kształtu")
+                continue
 
             reward = game.score - old_score
 
-            if game.is_game_over():
-                game.game_over = True
-                reward -= 100
+            done = game.is_game_over()
+            if done:
+                reward -= 100 #kara za śmierć
 
             next_state = game.get_state()
-            ai.remember(state, action, reward, next_state, game.game_over)
+            ai.remember(state, action, reward, next_state, done)
 
         scores.append(game.score)
         ai.replay()
@@ -49,3 +51,7 @@ def train_ai():
 
 if __name__ == "__main__":
     trained_ai, training_scores = train_ai()
+
+    import torch
+    torch.save(trained_ai.q_network.state_dict(), 'trained_model.pt')
+    print("Model zapisany!")
