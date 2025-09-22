@@ -202,6 +202,7 @@ class GameSimulator:
             for j in range(len(shape[0])):
                 if shape[i][j]:
                     self.board[row + i][col + j] = True
+                    self.score += 1
 
         lines_cleared = self.clear_full_lines()
 

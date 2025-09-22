@@ -3,7 +3,6 @@ import torch.nn as nn
 import torch.optim as optim
 import random
 from collections import deque
-import pickle
 
 class DQN(nn.Module):
     def __init__(self, input_size=205, hidden_size=1024, output_size=192):
