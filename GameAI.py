@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 import random
 from collections import deque
+import numpy as np
 
 class DQN(nn.Module):
     def __init__(self, input_size=205, hidden_size=1024, output_size=192):
@@ -50,7 +51,7 @@ class GameAI:
 
     def load_training_state(self):
         try:
-            state = torch.load(self.memory_file)
+            state = torch.load(self.memory_file, weights_only=False)
             self.epsilon = state['epsilon']
             self.memory.extend(state['memory'])
             self.q_network.load_state_dict(state['q_network_state'])
@@ -78,11 +79,18 @@ class GameAI:
             return
 
         batch = random.sample(self.memory, self.batch_size)
-        states = torch.FloatTensor([e[0] for e in batch]).to(self.device)
-        actions = torch.LongTensor([e[1] for e in batch]).to(self.device)
-        rewards = torch.FloatTensor([e[2] for e in batch]).to(self.device)
-        next_states = torch.FloatTensor([e[3] for e in batch]).to(self.device)
-        dones = torch.BoolTensor([e[4] for e in batch]).to(self.device)
+
+        states_np = np.array([e[0] for e in batch])
+        actions_np = np.array([e[1] for e in batch])
+        rewards_np = np.array([e[2] for e in batch])
+        next_states_np = np.array([e[3] for e in batch])
+        dones_np = np.array([e[4] for e in batch])
+
+        states = torch.FloatTensor(states_np).to(self.device)
+        actions = torch.LongTensor(actions_np).to(self.device)
+        rewards = torch.FloatTensor(rewards_np).to(self.device)
+        next_states = torch.FloatTensor(next_states_np).to(self.device)
+        dones = torch.BoolTensor(dones_np).to(self.device)
 
         current_q_values = self.q_network(states).gather(1, actions.unsqueeze(1))
         next_q_values = self.target_network(next_states).max(1)[0].detach()

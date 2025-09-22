@@ -1,5 +1,5 @@
 import numpy as np
-from random import randint, shuffle
+from random import randint, shuffle, choices
 from typing import List, Tuple
 
 class GameSimulator:
@@ -170,7 +170,7 @@ class GameSimulator:
     def start(self):
         for i in range(8):
             for j in range(8):
-                self.board[i][j] = randint(0, 1) == 1
+                self.board[i][j] = randint(0, 10) == 0
         self.reload_shop()
 
         lines_cleared = self.clear_full_lines()
@@ -202,11 +202,11 @@ class GameSimulator:
         elif fill_ratio > 0.8:
             suitable_shapes = very_small_shapes + small_shapes
         elif fill_ratio > 0.6:
-            suitable_shapes = small_shapes + medium_shapes
+            suitable_shapes = very_small_shapes + small_shapes + medium_shapes
         elif fill_ratio > 0.3:
-            suitable_shapes = small_shapes + medium_shapes + large_shapes
+            suitable_shapes = very_small_shapes + small_shapes + medium_shapes + large_shapes
         else:
-            suitable_shapes = medium_shapes + large_shapes + very_large_shapes
+            suitable_shapes = very_small_shapes + small_shapes + medium_shapes + large_shapes + very_large_shapes
 
         def get_all_positions_for_shape(shape):
             positions = []
@@ -238,21 +238,20 @@ class GameSimulator:
                 overlaps_with_any = False
                 for pos1 in positions1:
                     if positions_overlap(shape1, pos1, shape2, pos2):
-                        positions.append(pos2)
                         overlaps_with_any = True
                         break
                 if not overlaps_with_any:
-                    return positions
-            return False
+                    positions.append(pos2)
+            return positions
 
         result_shapes = []
-        reserved_positions = []
 
-        max_attempts = 20
+        max_attempts = 100
         first_shape = None
         first_positions = []
+        weights = list(range(1, len(suitable_shapes) + 1))
         for attempt in range(max_attempts):
-            candidate = suitable_shapes[randint(0, len(suitable_shapes) - 1)]
+            candidate = choices(suitable_shapes, weights=weights)[0]
             positions = get_all_positions_for_shape(candidate)
             if positions:
                 first_shape = candidate
@@ -265,28 +264,35 @@ class GameSimulator:
         second_shape = None
         second_positions = []
         for attempt in range(max_attempts):
-            candidate = suitable_shapes[randint(0, len(suitable_shapes) - 1)]
+            candidate = choices(suitable_shapes, weights=weights)[0]
             positions = has_non_overlapping_positions(first_shape, first_positions, candidate)
             if positions:
                 second_shape = candidate
                 second_positions = positions
                 result_shapes.append(candidate)
                 break
-        if not second_shape:
+        if second_shape is None:
             return [result_shapes[0], self.shapes[0], self.shapes[0]]
 
         third_shape = None
         for attempt in range(max_attempts):
-            candidate = suitable_shapes[randint(0, len(suitable_shapes) - 1)]
+            candidate = choices(suitable_shapes, weights=weights)[0]
             pos1 = has_non_overlapping_positions(first_shape, first_positions, candidate)
             pos2 = has_non_overlapping_positions(second_shape, second_positions, candidate)
+            found = False
             if pos1 and pos2:
                 for p1 in pos1:
                     for p2 in pos2:
                         if p1 == p2:
                             third_shape = candidate
                             result_shapes.append(candidate)
-        if not third_shape:
+                            found = True
+                            break
+                    if found:
+                        break
+            if found:
+                break
+        if third_shape is None:
             result_shapes.append(self.shapes[0])
         shuffle(result_shapes)
 

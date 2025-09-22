@@ -1,12 +1,14 @@
 from GameSimulator import GameSimulator
 from GameAI import GameAI
 import numpy as np
+from time import time
 
 def train_ai():
     ai = GameAI()
 
     episodes = 10000
     scores = []
+    t = time()
 
     for episode in range(episodes):
         game = GameSimulator()
@@ -45,10 +47,11 @@ def train_ai():
         scores.append(game.score)
         ai.replay()
 
-        ai.update_target_network()
         if episode % 100 == 0:
+            ai.update_target_network()
             avg_score = np.mean(scores[-100:])
-            print(f"Episode {episode}, Average Score: {avg_score:.2f}, Epsilon: {ai.epsilon:.3f}")
+            print(f"Episode {episode}, Average Score: {avg_score:.2f}, Epsilon: {ai.epsilon:.3f}, time: {time() - t}")
+            t = time()
 
     return ai, scores
 
