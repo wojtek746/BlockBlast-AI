@@ -163,9 +163,10 @@ class GameSimulator:
     def reload_shop(self):
         for i in range(3):
             self.shop[i] = self.shapes[randint(0, len(self.shapes) - 1)] #potem przerobić, żeby było zależne od ilości pustych kafelków
-        if not self.is_cleared_line:
+        if self.is_cleared_line:
+            self.is_cleared_line = False
+        else:
             self.combo = 0
-        self.is_cleared_line = False
 
     def combo_points(self, n):
         if 0 < n < 6:
@@ -265,7 +266,7 @@ class GameSimulator:
             self.shop[0].flatten().astype(float),
             self.shop[1].flatten().astype(float),
             self.shop[2].flatten().astype(float),
-            [0 if self.combo == 0 else 1 - 1 / self.combo],
+            [0 if self.combo == 0 else 1 - 1 / self.combo, 0 if self.is_cleared_line else 1],
         ])
 
     def copy(self):
