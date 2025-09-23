@@ -1,12 +1,9 @@
-import torch
-import torch.nn as nn
-import torch.optim as optim
+from torch import device, nn, optim, cuda, save, load, FloatTensor, stack, LongTensor, BoolTensor
 import random
 from collections import deque
-import numpy as np
 
 class DQN(nn.Module):
-    def __init__(self, input_size=238, hidden_size=4096, output_size=192):
+    def __init__(self, input_size=238, hidden_size=1024, output_size=192):
         super(DQN, self).__init__()
         self.network = nn.Sequential(
             nn.Linear(input_size, hidden_size),
@@ -17,26 +14,24 @@ class DQN(nn.Module):
             nn.Dropout(0.1),
             nn.Linear(hidden_size, hidden_size // 2),
             nn.ReLU(),
-            nn.Linear(hidden_size // 2, hidden_size // 4),
-            nn.ReLU(),
-            nn.Linear(hidden_size // 4, output_size)
+            nn.Linear(hidden_size // 2, output_size)
         )
 
     def forward(self, x):
         return self.network(x)
 
 class GameAI:
-    def __init__(self, learning_rate=0.00005, memory_file="ai_training_state.pt"):
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    def __init__(self, learning_rate=0.000005, memory_file="ai_training_state.pt"):
+        self.device = device("cuda" if cuda.is_available() else "cpu")
         self.q_network = DQN().to(self.device)
         self.target_network = DQN().to(self.device)
         self.optimizer = optim.Adam(self.q_network.parameters(), lr=learning_rate)
 
         self.memory = deque(maxlen=100000)
-        self.epsilon = 1.0
-        self.epsilon_min = 0.00001
+        self.epsilon = 0.01
+        self.epsilon_min = 0
         self.batch_size = 512
-        self.gamma = 0.99
+        self.gamma = 0.5
         self.memory_file = memory_file
         self.load_training_state()
 
@@ -50,12 +45,13 @@ class GameAI:
             'q_network_state': self.q_network.state_dict(),
             'target_network_state': self.target_network.state_dict()
         }
-        torch.save(state, self.memory_file)
+        save(state, self.memory_file)
 
     def load_training_state(self):
         try:
-            state = torch.load(self.memory_file, weights_only=False)
+            state = load(self.memory_file, weights_only=False)
             self.epsilon = state['epsilon']
+            self.epsilon = 0
             self.memory.extend(state['memory'])
             self.q_network.load_state_dict(state['q_network_state'])
             self.target_network.load_state_dict(state['target_network_state'])
@@ -66,7 +62,7 @@ class GameAI:
         if random.random() <= self.epsilon:
             return random.choice(valid_actions)
 
-        state_tensor = torch.FloatTensor(state).unsqueeze(0).to(self.device)
+        state_tensor = FloatTensor(state).unsqueeze(0).to(self.device)
         q_values = self.q_network(state_tensor)
 
         masked_q_values = q_values.clone()
@@ -83,11 +79,11 @@ class GameAI:
 
         batch = random.sample(self.memory, self.batch_size)
 
-        states = torch.stack([torch.FloatTensor(e[0]) for e in batch]).to(self.device)
-        actions = torch.LongTensor([e[1] for e in batch]).to(self.device)
-        rewards = torch.FloatTensor([e[2] for e in batch]).to(self.device)
-        next_states = torch.stack([torch.FloatTensor(e[3]) for e in batch]).to(self.device)
-        dones = torch.BoolTensor([e[4] for e in batch]).to(self.device)
+        states = stack([FloatTensor(e[0]) for e in batch]).to(self.device)
+        actions = LongTensor([e[1] for e in batch]).to(self.device)
+        rewards = FloatTensor([e[2] for e in batch]).to(self.device)
+        next_states = stack([FloatTensor(e[3]) for e in batch]).to(self.device)
+        dones = BoolTensor([e[4] for e in batch]).to(self.device)
 
         current_q_values = self.q_network(states).gather(1, actions.unsqueeze(1))
         next_q_values = self.target_network(next_states).max(1)[0].detach()
@@ -97,7 +93,7 @@ class GameAI:
 
         self.optimizer.zero_grad()
         loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.q_network.parameters(), 0.5) #nie wiem, co to robi xd
+        nn.utils.clip_grad_norm_(self.q_network.parameters(), 0.5) #nie wiem, co to robi xd
         self.optimizer.step()
 
     def update_target_network(self, tau=0.001):

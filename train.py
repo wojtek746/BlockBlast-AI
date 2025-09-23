@@ -1,16 +1,16 @@
 from GameSimulator import GameSimulator
-import numpy as np
-import multiprocessing as mp
+from numpy import mean, std
+from multiprocessing import cpu_count
 from concurrent.futures import ProcessPoolExecutor
-import torch
+from torch import device as torch_device
+from torch import FloatTensor, no_grad, save
 from queue import Queue
-import threading
 
 def run_single_episode(q_network_state, epsilon, episode_num):
     from GameAI import DQN
     import random
 
-    device = torch.device("cpu")
+    device = torch_device("cpu")
     q_network = DQN().to(device)
     q_network.load_state_dict({k: v.cpu() for k, v in q_network_state.items()})
     q_network.eval()
@@ -18,9 +18,9 @@ def run_single_episode(q_network_state, epsilon, episode_num):
     def simple_act(state, valid_actions):
         if random.random() <= epsilon:
             return random.choice(valid_actions)
-        state_tensor = torch.FloatTensor(state).unsqueeze(0)
+        state_tensor = FloatTensor(state).unsqueeze(0)
 
-        with torch.no_grad():
+        with no_grad():
             q_values = q_network(state_tensor)
 
         masked_q_values = q_values.clone()
@@ -54,7 +54,7 @@ def run_single_episode(q_network_state, epsilon, episode_num):
             print("nie udało się postawić kształtu")
             continue
 
-        reward = game.score - old_score + min(game.combo * 0.1, 2.0) + 0.05
+        reward = game.score - old_score
 
         done = game.is_game_over()
         if done:
@@ -101,16 +101,16 @@ class PipelinedTrainer:
             self.ai.remember(*memory)
 
         if len(self.ai.memory) > self.ai.batch_size:
-            training_steps = 20
+            training_steps = 5
 
             for _ in range(training_steps):
                 self.ai.replay()
 
 def update_epsilon(ai, episode):
-    epsilon_decay_episodes = 50000
+    epsilon_decay_episodes = 40000
     if episode < epsilon_decay_episodes:
-        progress = episode / epsilon_decay_episodes
-        ai.epsilon = max(ai.epsilon_min, 1.0 - progress * (1.0 - ai.epsilon_min))
+        decay_rate = 0.99995
+        ai.epsilon = max(ai.epsilon_min, ai.epsilon * decay_rate)
     else:
         ai.epsilon = ai.epsilon_min
 
@@ -122,14 +122,14 @@ def train_ai():
     episodes = 100000
     scores = []
 
-    num_workers = max(1, mp.cpu_count() - 10)
+    num_workers = max(1, cpu_count() - 10)
     trainer = PipelinedTrainer(ai, num_workers)
     print(f"Używam {num_workers} procesów równoległych")
 
     current_futures = trainer.start_simulation_batch(0)
 
+    t = time()
     for episode_batch in range(0, episodes, trainer.batch_episodes):
-        t = time()
 
         batch_memories, batch_scores = trainer.collect_simulation_results(current_futures)
         scores.extend(batch_scores)
@@ -141,13 +141,18 @@ def train_ai():
         current_episode = episode_batch + trainer.batch_episodes
         update_epsilon(ai, current_episode)
 
-        if current_episode % 2000 == 0:
+        if current_episode % 5000 == 0:
             ai.update_target_network()
             ai.save_training_state()
+            print("zapisano memory do pliku")
 
         if current_episode % 100 == 0:
             recent_scores = scores[-100:] if len(scores) >= 100 else scores
-            print(f"Episode: {current_episode}, Avg: {np.mean(recent_scores):.1f}, Max: {max(recent_scores):.1f}, Min: {min(recent_scores):.1f}, Std: {np.std(recent_scores):.1f}, Epsilon: {ai.epsilon:.5f}, Time: {(time() - t):.1f}")
+            better = []
+            for i in recent_scores:
+                if i > 100:
+                    better.append(i)
+            print(f"Episode: {current_episode}, Avg: {mean(recent_scores):.1f}, Avg dla > 100: {mean(better):.1f}, Max: {max(recent_scores):.1f}, Min: {min(recent_scores):.1f}, Std: {std(recent_scores):.1f}, Epsilon: {ai.epsilon:.5f}, Time: {(time() - t):.1f}")
             t = time()
 
     trainer.executor.shutdown()
@@ -156,6 +161,6 @@ def train_ai():
 if __name__ == "__main__":
     trained_ai, training_scores = train_ai()
 
-    torch.save(trained_ai.q_network.state_dict(), 'trained_model.pt')
+    save(trained_ai.q_network.state_dict(), 'trained_model.pt')
     trained_ai.save_training_state()
     print("Model zapisany!")

@@ -198,7 +198,7 @@ class GameSimulator:
         else:
             ratio = uniform(0.1, 0.7)
 
-        target_cells = int(64 * ratio)
+        target_cells = int(64 * 0.1)
         positions = [(i, j) for i in range(8) for j in range(8)]
         filled_positions = sample(positions, target_cells)
         for i, j in filled_positions:
