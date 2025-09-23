@@ -382,6 +382,7 @@ class GameSimulator:
 
     def clear_full_lines(self):
         lines_to_remove = []
+        number = 0
 
         for i in range(8):
             if all(self.board[i]):
@@ -390,11 +391,13 @@ class GameSimulator:
         for j in range(8):
             if all(self.board[:, j]):
                 self.board[:, j] = False
+                number += 1
 
         for i in lines_to_remove:
             self.board[i, :] = False
+            number += 1
 
-        return len(lines_to_remove)
+        return number
 
     def get_valid_moves(self, shop_index):
         if shop_index < 0 or shop_index >= 3:

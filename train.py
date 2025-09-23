@@ -9,6 +9,7 @@ from queue import Queue
 def run_single_episode(q_network_state, epsilon, episode_num):
     from GameAI import DQN
     import random
+    from collections import deque
 
     device = torch_device("cpu")
     q_network = DQN().to(device)
@@ -35,6 +36,7 @@ def run_single_episode(q_network_state, epsilon, episode_num):
     game.start(episode_num)
 
     episode_memory = []
+    recent_moves_buffer = deque(maxlen=5)
 
     while not game.is_game_over():
         valid_actions = game.get_all_valid_actions()
@@ -57,11 +59,39 @@ def run_single_episode(q_network_state, epsilon, episode_num):
         reward = game.score - old_score
 
         done = game.is_game_over()
-        if done:
-            reward -= 10  # kara za śmierć
 
         next_state = game.get_state()
+
+        move_data = {
+            'state': state.copy(),
+            'action': action,
+            'original_reward': reward,
+            'next_state': next_state.copy(),
+            'done': done,
+            'episode_memory_index': len(episode_memory)  # Index w episode_memory
+        }
+        recent_moves_buffer.append(move_data)
+
         episode_memory.append((state, action, reward, next_state, done))
+
+        if done: #kara za śmierć
+            death_penalties = [10, 9, 8, 7, 6]
+            for i, move_data in enumerate(recent_moves_buffer):
+                penalty_index = len(recent_moves_buffer) - 1 - i
+                death_penalty = death_penalties[penalty_index]
+                original_reward = move_data['original_reward']
+                new_reward = original_reward - death_penalty
+                memory_index = move_data['episode_memory_index']
+                old_entry = episode_memory[memory_index]
+
+                episode_memory[memory_index] = (
+                    old_entry[0],
+                    old_entry[1],
+                    new_reward,
+                    old_entry[3],
+                    old_entry[4]
+                )
+            break
 
     return episode_memory, game.score
 
@@ -109,7 +139,7 @@ class PipelinedTrainer:
 def update_epsilon(ai, episode):
     epsilon_decay_episodes = 40000
     if episode < epsilon_decay_episodes:
-        decay_rate = 0.99995
+        decay_rate = 0.9995
         ai.epsilon = max(ai.epsilon_min, ai.epsilon * decay_rate)
     else:
         ai.epsilon = ai.epsilon_min
@@ -154,6 +184,10 @@ def train_ai():
                     better.append(i)
             print(f"Episode: {current_episode}, Avg: {mean(recent_scores):.1f}, Avg dla > 100: {mean(better):.1f}, Max: {max(recent_scores):.1f}, Min: {min(recent_scores):.1f}, Std: {std(recent_scores):.1f}, Epsilon: {ai.epsilon:.5f}, Time: {(time() - t):.1f}")
             t = time()
+
+        if current_episode % 10000 == 0:
+            save(ai.q_network.state_dict(), 'trained_model.pt')
+            print("zapisano model")
 
     trainer.executor.shutdown()
     return ai, scores
