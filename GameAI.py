@@ -80,8 +80,8 @@ class GameAI:
 
         return action, log_prob
 
-    def store_transition(self, state, action, log_prob):
-        self.current_episode.append((state.copy(), action, log_prob))
+    def store_transition(self, state, action, valid_actions):
+        self.current_episode.append((state.copy(), action, valid_actions))
 
     def finish_episode(self, final_score):
         if not self.current_episode:
@@ -94,7 +94,10 @@ class GameAI:
         advantage = final_score - baseline
 
         episode_data = []
-        for state, action, log_prob in self.current_episode:
+        for state, action, valid_actions in self.current_episode:
+            state_tensor = FloatTensor(state).unsqueeze(0).to(self.device)
+            logits = self.policy_network(state_tensor)
+            log_prob = F.log_softmax(logits.clone(), dim=1)[0][action]
             episode_data.append((state, action, log_prob, advantage))
         self.episodes_data.append(episode_data)
         self.current_episode = []
@@ -119,7 +122,11 @@ class GameAI:
         for episode in recent_episodes:
             for state, action, log_prob, advantage in episode:
                 normalized_advantage = (advantage - advantages_mean) / advantages_std
-                policy_losses.append(-log_prob * normalized_advantage)
+                if isinstance(log_prob, (int, float)):
+                    log_prob_tensor = FloatTensor([log_prob]).to(self.device)
+                else:
+                    log_prob_tensor = log_prob
+                policy_losses.append(-log_prob_tensor * normalized_advantage)
         if not policy_losses:
             return
 

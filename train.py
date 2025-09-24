@@ -68,7 +68,7 @@ def run_single_episode(policy_network_state, epsilon, episode_num):
             print("nie udało się postawić kształtu")
             continue
 
-        episode_data.append((state.copy(), action, log_prob.item()))
+        episode_data.append((state.copy(), action, valid_actions.copy()))
 
     return episode_data, game.score
 
@@ -101,8 +101,8 @@ class PipelinedTrainer:
 
     def train_on_batch(self, batch_episodes_data):
         for episode_data, final_score in batch_episodes_data:
-            for state, action, log_prob in episode_data:
-                self.ai.store_transition(state, action, log_prob)
+            for state, action, valid_actions in episode_data:
+                self.ai.store_transition(state, action, valid_actions)
             self.ai.finish_episode(final_score)
         self.ai.update_policy(batch_size=len(batch_episodes_data))
 
