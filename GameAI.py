@@ -51,6 +51,7 @@ class GameAI:
         try:
             state = load(self.memory_file, weights_only=False)
             self.epsilon = state['epsilon']
+            self.epsilon = 0
             self.memory.extend(state['memory'])
             self.q_network.load_state_dict(state['q_network_state'])
             self.target_network.load_state_dict(state['target_network_state'])
