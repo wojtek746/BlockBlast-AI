@@ -7,49 +7,37 @@ from torch import FloatTensor, no_grad, save
 from torch.nn import functional as F
 import random
 
-def run_single_episode(policy_network_state, epsilon, episode_num):
-    from GameAI import PolicyNetwork
+def run_single_episode(actor_network_state, epsilon, episode_num):
+    from GameAI import ActorNetwork
 
     device = torch_device("cpu")
-    policy_network = PolicyNetwork().to(device)
-    policy_network.load_state_dict({k: v.cpu() for k, v in policy_network_state.items()})
-    policy_network.eval()
+    actor_network = ActorNetwork().to(device)
+    actor_network.load_state_dict({k: v.cpu() for k, v in actor_network_state.items()})
+    actor_network.eval()
 
     def simple_act(state, valid_actions):
         if random.random() < epsilon:
-            action = random.choice(valid_actions)
-            state_tensor = FloatTensor(state).unsqueeze(0)
-            with no_grad():
-                logits = policy_network(state_tensor)
-
-            masked_logits = logits.clone()
-            for i in range(192):
-                if i not in set(valid_actions):
-                    masked_logits[0][i] = float('-inf')
-
-            log_probs = F.log_softmax(masked_logits, dim=1)
-            log_prob = log_probs[0][action]
-            return action, log_prob
+            return random.choice(valid_actions)
 
         state_tensor = FloatTensor(state).unsqueeze(0)
 
         with no_grad():
-            logits = policy_network(state_tensor)
+            logits = actor_network(state_tensor)
 
         masked_logits = logits.clone()
+        valid_set = set(valid_actions)
         for i in range(192):
-            if i not in set(valid_actions):
+            if i not in valid_set:
                 masked_logits[0][i] = float('-inf')
 
         action = F.softmax(masked_logits, dim=1).multinomial(1).item()
-        log_prob = F.log_softmax(masked_logits, dim=1)[0][action]
 
-        return action, log_prob
+        return action
 
     game = GameSimulator()
     game.start(episode_num)
 
-    episode_data = []
+    episode_transitions = []  # (state, action, reward, next_state, done, valid_actions)
 
     while not game.is_game_over():
         valid_actions = game.get_all_valid_actions()
@@ -58,19 +46,24 @@ def run_single_episode(policy_network_state, epsilon, episode_num):
             break
 
         state = game.get_state()
-        action, log_prob = simple_act(state, valid_actions)
+        action = simple_act(state, valid_actions)
 
         shop_index, row, col = action // 64, (action % 64) // 8, action % 8
 
+        old_score = game.score
         success = game.place_shape(shop_index, row, col)
 
         if not success:
             print("nie udało się postawić kształtu")
             continue
 
-        episode_data.append((state.copy(), action, valid_actions.copy()))
+        reward = game.score - old_score
+        done = game.is_game_over()
+        next_state = game.get_state()
 
-    return episode_data, game.score
+        episode_transitions.append((state, action, reward, next_state, done, valid_actions))
+
+    return episode_transitions, game.score
 
 class PipelinedTrainer:
     def __init__(self, ai, num_workers):
@@ -81,30 +74,28 @@ class PipelinedTrainer:
         self.executor = ProcessPoolExecutor(max_workers=num_workers)
 
     def start_simulation_batch(self, episode_num):
-        policy_network_state = {k: v.cpu() for k, v in self.ai.policy_network.state_dict().items()}
+        actor_network_state = {k: v.cpu() for k, v in self.ai.actor_network.state_dict().items()}
         current_epsilon = self.ai.epsilon
 
-        futures = [self.executor.submit(run_single_episode, policy_network_state, current_epsilon, episode_num) for _ in range(self.batch_episodes)]
+        futures = [self.executor.submit(run_single_episode, actor_network_state, current_epsilon, episode_num) for _ in range(self.batch_episodes)]
 
         return futures
 
     def collect_simulation_results(self, futures):
-        batch_episodes_data = []
+        all_transitions = []
         batch_scores = []
 
         for future in futures:
-            episode_data, score = future.result()
-            batch_episodes_data.append((episode_data, score))
+            episode_transitions, score = future.result()
+            all_transitions.append((episode_transitions, score))
             batch_scores.append(score)
 
-        return batch_episodes_data, batch_scores
+        return all_transitions, batch_scores
 
-    def train_on_batch(self, batch_episodes_data):
-        for episode_data, final_score in batch_episodes_data:
-            for state, action, valid_actions in episode_data:
-                self.ai.store_transition(state, action, valid_actions)
-            self.ai.finish_episode(final_score)
-        self.ai.update_policy(batch_size=len(batch_episodes_data))
+    def train_on_batch(self, all_transitions):
+        for transition in all_transitions:
+            self.ai.store_transition(*transition)
+        self.ai.update_networks(batch_size=min(256, len(all_transitions)))
 
 def train_ai():
     from GameAI import GameAI
@@ -123,12 +114,12 @@ def train_ai():
     t = time()
     for episode_batch in range(0, episodes, trainer.batch_episodes):
 
-        batch_episodes_data, batch_scores = trainer.collect_simulation_results(current_futures)
+        all_transitions, batch_scores = trainer.collect_simulation_results(current_futures)
         scores.extend(batch_scores)
 
         if episode_batch + trainer.batch_episodes < episodes:
             current_futures = trainer.start_simulation_batch(episode_batch + trainer.batch_episodes)
-        trainer.train_on_batch(batch_episodes_data)
+        trainer.train_on_batch(all_transitions)
 
         current_episode = episode_batch + trainer.batch_episodes
         ai.update_epsilon()
@@ -140,12 +131,17 @@ def train_ai():
         if current_episode % 1000 == 0:
             recent_scores = scores[-100:] if len(scores) >= 100 else scores
             better = [i for i in recent_scores if i > 100]
-            baseline = mean(ai.baseline_scores) if ai.baseline_scores else 0
-            print(f"Episode: {current_episode}, Avg: {mean(recent_scores):.1f}, Avg dla > 100: {mean(better) if better else 0:.1f}, Max: {max(recent_scores):.1f}, Min: {min(recent_scores):.1f}, Std: {std(recent_scores):.1f}, Epsilon: {ai.epsilon:.5f}, Baseline: {baseline:.1f}, Time: {(time() - t):.1f}")
+            sample_state = GameSimulator().get_state()
+            state_value = ai.get_state_value(sample_state)
+
+            print(f"Episode: {current_episode}, Avg: {mean(recent_scores):.1f}, Avg dla > 100: {mean(better) if better else 0:.1f}, Max: {max(recent_scores):.1f}, Min: {min(recent_scores):.1f}, Std: {std(recent_scores):.1f}, Epsilon: {ai.epsilon:.5f}, State_Value: {state_value:.1f}, Time: {(time() - t):.1f}")
             t = time()
 
         if current_episode % 10000 == 0:
-            save(ai.policy_network.state_dict(), 'trained_model.pt')
+            save({
+                'actor': ai.actor_network.state_dict(),
+                'critic': ai.critic_network.state_dict()
+            }, 'trained_model.pt')
             print("zapisano model")
 
     trainer.executor.shutdown()
@@ -153,7 +149,3 @@ def train_ai():
 
 if __name__ == "__main__":
     trained_ai, training_scores = train_ai()
-
-    save(trained_ai.policy_network.state_dict(), 'trained_model.pt')
-    trained_ai.save_training_state()
-    print("Model zapisany!")
