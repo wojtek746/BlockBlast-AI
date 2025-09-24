@@ -28,7 +28,7 @@ class GameAI:
         self.optimizer = optim.Adam(self.q_network.parameters(), lr=learning_rate)
 
         self.memory = deque(maxlen=100000)
-        self.epsilon = 1
+        self.epsilon = 0
         self.epsilon_min = 0
         self.batch_size = 512
         self.gamma = 0.5
@@ -51,7 +51,6 @@ class GameAI:
         try:
             state = load(self.memory_file, weights_only=False)
             self.epsilon = state['epsilon']
-            self.epsilon = 1
             self.memory.extend(state['memory'])
             self.q_network.load_state_dict(state['q_network_state'])
             self.target_network.load_state_dict(state['target_network_state'])

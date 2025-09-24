@@ -5,4 +5,5 @@ __pycache__
 screen
 screen.png
 ai_training_state.pt
+ai_training_state-old.pt
 train.dist/

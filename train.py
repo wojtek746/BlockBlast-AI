@@ -137,19 +137,15 @@ class PipelinedTrainer:
                 self.ai.replay()
 
 def update_epsilon(ai, episode):
-    epsilon_decay_episodes = 40000
-    if episode < epsilon_decay_episodes:
-        decay_rate = 0.9995
-        ai.epsilon = max(ai.epsilon_min, ai.epsilon * decay_rate)
-    else:
-        ai.epsilon = ai.epsilon_min
+    decay_rate = 0.9995
+    ai.epsilon = max(ai.epsilon_min, ai.epsilon * decay_rate)
 
 def train_ai():
     from GameAI import GameAI
     from time import time
 
     ai = GameAI()
-    episodes = 100000
+    episodes = 1000000
     scores = []
 
     num_workers = max(1, cpu_count() - 10)
@@ -176,7 +172,7 @@ def train_ai():
             ai.save_training_state()
             print("zapisano memory do pliku")
 
-        if current_episode % 100 == 0:
+        if current_episode % 1000 == 0:
             recent_scores = scores[-100:] if len(scores) >= 100 else scores
             better = []
             for i in recent_scores:
