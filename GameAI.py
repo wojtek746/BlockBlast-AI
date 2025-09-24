@@ -22,7 +22,7 @@ class PolicyNetwork(nn.Module):
         return self.network(x)
 
 class GameAI:
-    def __init__(self, learning_rate=0.0001, memory_file="ai_training_state.pt"):
+    def __init__(self, learning_rate=0.00001, memory_file="ai_training_state.pt"):
         self.device = device("cuda")
         self.policy_network  = PolicyNetwork().to(self.device)
         self.optimizer = optim.Adam(self.policy_network.parameters(), lr=learning_rate)

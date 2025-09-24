@@ -76,7 +76,7 @@ class PipelinedTrainer:
     def __init__(self, ai, num_workers):
         self.ai = ai
         self.num_workers = num_workers
-        self.batch_episodes = num_workers * 4
+        self.batch_episodes = num_workers * 5
 
         self.executor = ProcessPoolExecutor(max_workers=num_workers)
 
@@ -137,7 +137,7 @@ def train_ai():
             ai.save_training_state()
             print("zapisano training do pliku")
 
-        if current_episode % 100 == 0:
+        if current_episode % 1000 == 0:
             recent_scores = scores[-100:] if len(scores) >= 100 else scores
             better = [i for i in recent_scores if i > 100]
             baseline = mean(ai.baseline_scores) if ai.baseline_scores else 0
