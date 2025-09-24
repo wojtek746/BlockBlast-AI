@@ -1,10 +1,11 @@
-from torch import device, nn, optim, cuda, save, load, FloatTensor, stack, LongTensor, BoolTensor
+from torch import device, nn, optim, cuda, save, load, FloatTensor, stack, no_grad
+from torch.nn import functional as F
 import random
-from collections import deque
+import numpy as np
 
-class DQN(nn.Module):
+class PolicyNetwork(nn.Module):
     def __init__(self, input_size=238, hidden_size=1024, output_size=192):
-        super(DQN, self).__init__()
+        super(PolicyNetwork, self).__init__()
         self.network = nn.Sequential(
             nn.Linear(input_size, hidden_size),
             nn.ReLU(),
@@ -21,82 +22,115 @@ class DQN(nn.Module):
         return self.network(x)
 
 class GameAI:
-    def __init__(self, learning_rate=0.000005, memory_file="ai_training_state.pt"):
-        self.device = device("cuda" if cuda.is_available() else "cpu")
-        self.q_network = DQN().to(self.device)
-        self.target_network = DQN().to(self.device)
-        self.optimizer = optim.Adam(self.q_network.parameters(), lr=learning_rate)
+    def __init__(self, learning_rate=0.0001, memory_file="ai_training_state.pt"):
+        self.device = device("cuda")
+        self.policy_network  = PolicyNetwork().to(self.device)
+        self.optimizer = optim.Adam(self.policy_network.parameters(), lr=learning_rate)
 
-        self.memory = deque(maxlen=100000)
-        self.epsilon = 0
-        self.epsilon_min = 0
-        self.batch_size = 512
-        self.gamma = 0.5
+        self.episodes_data = []
+        self.current_episode = []
+
+        self.epsilon = 0.3
+        self.epsilon_min = 0.0
+        self.epsilon_decay = 0.9995
+
         self.memory_file = memory_file
+        self.baseline_scores = []
         self.load_training_state()
-
-    def remember(self, state, action, reward, next_state, done):
-        self.memory.append((state, action, reward, next_state, done))
 
     def save_training_state(self):
         state = {
             'epsilon': self.epsilon,
-            'memory': list(self.memory),
-            'q_network_state': self.q_network.state_dict(),
-            'target_network_state': self.target_network.state_dict()
+            'baseline_scores': self.baseline_scores,
+            'policy_network_state': self.policy_network.state_dict(),
+            'episodes_data': self.episodes_data
         }
         save(state, self.memory_file)
 
     def load_training_state(self):
         try:
             state = load(self.memory_file, weights_only=False)
-            self.epsilon = state['epsilon']
-            self.epsilon = 0
-            self.memory.extend(state['memory'])
-            self.q_network.load_state_dict(state['q_network_state'])
-            self.target_network.load_state_dict(state['target_network_state'])
+            self.epsilon = state.get('epsilon', self.epsilon)
+            self.baseline_scores = state.get('baseline_scores', [])
+            self.episodes_data = state.get('episodes_data', [])
+            self.policy_network.load_state_dict(state['policy_network_state'])
         except FileNotFoundError:
             print("Nowy trening")
 
     def act(self, state, valid_actions):
-        if random.random() <= self.epsilon:
-            return random.choice(valid_actions)
+        if random.random() < self.epsilon:
+            action = random.choice(valid_actions)
+            state_tensor = FloatTensor(state).unsqueeze(0).to(self.device)
+            masked_logits = self.policy_network(state_tensor).clone()
+            for i in range(192):
+                if i not in set(valid_actions):
+                    masked_logits[0][i] = float('-inf')
+            log_prob = F.log_softmax(masked_logits, dim=1)[0][action]
+            return action, log_prob.detach()
 
         state_tensor = FloatTensor(state).unsqueeze(0).to(self.device)
-        q_values = self.q_network(state_tensor)
 
-        masked_q_values = q_values.clone()
-        valid_indices = set(valid_actions)
+        masked_logits = self.policy_network(state_tensor).clone()
         for i in range(192):  # 8x8 pozycji x 3 elementy w sklepie
-            if i not in valid_indices:
-                masked_q_values[0][i] = float('-inf')
+            if i not in set(valid_actions):
+                masked_logits[0][i] = float('-inf')
 
-        return masked_q_values.argmax().item()
+        action = F.softmax(masked_logits, dim=1).multinomial(1).item()
+        log_prob = F.log_softmax(masked_logits, dim=1)[0][action]
 
-    def replay(self):
-        if len(self.memory) < self.batch_size:
+        return action, log_prob
+
+    def store_transition(self, state, action, log_prob):
+        self.current_episode.append((state.copy(), action, log_prob))
+
+    def finish_episode(self, final_score):
+        if not self.current_episode:
+            return
+        self.baseline_scores.append(final_score)
+        if len(self.baseline_scores) > 1000:
+            self.baseline_scores.pop(0)
+
+        baseline = np.mean(self.baseline_scores) if self.baseline_scores else 0
+        advantage = final_score - baseline
+
+        episode_data = []
+        for state, action, log_prob in self.current_episode:
+            episode_data.append((state, action, log_prob, advantage))
+        self.episodes_data.append(episode_data)
+        self.current_episode = []
+
+    def update_policy(self, batch_size=32):
+        if len(self.episodes_data) < batch_size:
             return
 
-        batch = random.sample(self.memory, self.batch_size)
+        recent_episodes = self.episodes_data[-batch_size:]
+        policy_losses = []
+        all_advantages = []
 
-        states = stack([FloatTensor(e[0]) for e in batch]).to(self.device)
-        actions = LongTensor([e[1] for e in batch]).to(self.device)
-        rewards = FloatTensor([e[2] for e in batch]).to(self.device)
-        next_states = stack([FloatTensor(e[3]) for e in batch]).to(self.device)
-        dones = BoolTensor([e[4] for e in batch]).to(self.device)
+        for episode in recent_episodes:
+            for _, _, _, advantage in episode:
+                all_advantages.append(advantage)
+        if not all_advantages:
+            return
 
-        current_q_values = self.q_network(states).gather(1, actions.unsqueeze(1))
-        next_q_values = self.target_network(next_states).max(1)[0].detach()
-        target_q_values = rewards + (self.gamma * next_q_values * ~dones)
+        advantages_mean = np.mean(all_advantages)
+        advantages_std = np.std(all_advantages) + 1e-8
 
-        loss = nn.MSELoss()(current_q_values.squeeze(), target_q_values)
+        for episode in recent_episodes:
+            for state, action, log_prob, advantage in episode:
+                normalized_advantage = (advantage - advantages_mean) / advantages_std
+                policy_losses.append(-log_prob * normalized_advantage)
+        if not policy_losses:
+            return
 
         self.optimizer.zero_grad()
-        loss.backward()
-        nn.utils.clip_grad_norm_(self.q_network.parameters(), 0.5) #nie wiem, co to robi xd
+        total_loss = stack(policy_losses).mean()
+        total_loss.backward()
+        nn.utils.clip_grad_norm_(self.policy_network.parameters(), 0.5)
         self.optimizer.step()
 
-    def update_target_network(self, tau=0.001):
-        self.target_network.load_state_dict(self.q_network.state_dict())
-        for target_param, local_param in zip(self.target_network.parameters(), self.q_network.parameters()):
-            target_param.data.copy_(tau * local_param.data + (1.0 - tau) * target_param.data)
+        if len(self.episodes_data) > batch_size * 2:
+            self.episodes_data = self.episodes_data[-batch_size:]
+
+    def update_epsilon(self):
+        self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
