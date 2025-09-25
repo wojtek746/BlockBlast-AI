@@ -1,4 +1,4 @@
-from torch import device, nn, optim, cuda, save, load, FloatTensor, stack, no_grad
+from torch import device, nn, optim, cuda, save, load, FloatTensor, stack, no_grad, LongTensor
 from torch.nn import functional as F
 import random
 import numpy as np
@@ -51,6 +51,7 @@ class GameAI:
         try:
             state = load(self.memory_file, weights_only=False)
             self.epsilon = state.get('epsilon', self.epsilon)
+            self.epsilon = 0 #było 0.41
             self.baseline_scores = state.get('baseline_scores', [])
             self.policy_network.load_state_dict(state['policy_network_state'])
         except FileNotFoundError:
@@ -87,15 +88,12 @@ class GameAI:
 
         return action, log_prob
 
-    def store_transition(self, state, action, reward, next_state, done, valid_actions):
-        self.transitions.append((state.copy(), action, reward, next_state.copy(), done, valid_actions.copy()))
-
     def finish_episode(self, final_score):
         if not self.episode_data:
             return
 
         self.baseline_scores.append(final_score)
-        if len(self.baseline_scores) > 1000:
+        if len(self.baseline_scores) > 10:
             self.baseline_scores.pop(0)
 
         baseline = np.mean(self.baseline_scores) if self.baseline_scores else 0
@@ -125,3 +123,31 @@ class GameAI:
 
     def update_epsilon(self):
         self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
+
+    def batch_update(self, states, actions, advantages, valid_actions_list):
+        if not states:
+            return
+        advantages = np.array(advantages)
+        if len(advantages) > 1:
+            advantages = (advantages - np.mean(advantages)) / (np.std(advantages) + 1e-8)
+
+        states_tensor = FloatTensor(np.array(states)).to(self.device)
+        actions_tensor = LongTensor(actions).to(self.device)
+        advantages_tensor = FloatTensor(advantages).to(self.device)
+
+        logits = self.policy_network(states_tensor)
+
+        masked_logits = logits.clone()
+        for batch_idx, valid_actions in enumerate(valid_actions_list):
+            valid_set = set(valid_actions)
+            for action_idx in range(192):
+                if action_idx not in valid_set:
+                    masked_logits[batch_idx][action_idx] = float('-inf')
+
+        selected_log_probs = F.log_softmax(logits, dim=1).gather(1, actions_tensor.unsqueeze(1)).squeeze()
+        policy_loss = -(selected_log_probs * advantages_tensor).mean()
+
+        self.optimizer.zero_grad()
+        policy_loss.backward()
+        nn.utils.clip_grad_norm_(self.policy_network.parameters(), 0.5)
+        self.optimizer.step()

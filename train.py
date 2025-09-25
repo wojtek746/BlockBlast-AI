@@ -38,7 +38,7 @@ def run_single_episode(policy_network_state, epsilon, episode_num):
     game.start(episode_num)
     predicted_reward(game.board, 0)
 
-    episode_transitions = []  # (state, action, reward)
+    episode_transitions = []  # (state, action, reward, valid_actions)
 
     while not game.is_game_over():
         valid_actions = game.get_all_valid_actions()
@@ -62,7 +62,7 @@ def run_single_episode(policy_network_state, epsilon, episode_num):
         if done:
             reward += penalty_for_losing
 
-        episode_transitions.append((state, action, reward))
+        episode_transitions.append((state, action, reward, valid_actions))
 
     return episode_transitions, game.score
 
@@ -88,17 +88,45 @@ class PipelinedTrainer:
 
         for future in futures:
             episode_transitions, score = future.result()
-            all_episodes.extend((episode_transitions, score))
+            all_episodes.append((episode_transitions, score))
             batch_scores.append(score)
 
         return all_episodes, batch_scores
 
     def train_on_batch(self, all_episodes):
+        all_scores = [final_score for _, final_score in all_episodes]
+        self.ai.baseline_scores.extend(all_scores)
+        if len(self.ai.baseline_scores) > 1000:
+            self.ai.baseline_scores = self.ai.baseline_scores[-1000:]
+
+        baseline = np.mean(self.ai.baseline_scores) if self.ai.baseline_scores else 0
+
+        all_states = []
+        all_actions = []
+        all_advantages = []
+        all_valid_actions = []
+
         for episode_transitions, final_score in all_episodes:
-            self.ai.episode_data = []
-            for state, action, reward in episode_transitions:
-                self.ai.episode_data.append((state, action, reward, []))
-            self.ai.finish_episode(final_score)
+            advantage = final_score - baseline
+
+            for state, action, reward, valid_actions in episode_transitions:
+                all_states.append(state)
+                all_actions.append(action)
+                all_advantages.append(advantage)
+                all_valid_actions.append(valid_actions)
+
+        if not all_states:
+            return
+
+        max_batch_size = 50
+        if len(all_states) > max_batch_size:
+            indices = random.sample(range(len(all_states)), max_batch_size)
+            all_states = [all_states[i] for i in indices]
+            all_actions = [all_actions[i] for i in indices]
+            all_advantages = [all_advantages[i] for i in indices]
+            all_valid_actions = [all_valid_actions[i] for i in indices]
+
+        self.ai.batch_update(all_states, all_actions, all_advantages, all_valid_actions)
 
 def train_ai():
     from GameAI import GameAI
@@ -131,9 +159,10 @@ def train_ai():
             ai.save_training_state()
             print("zapisano training do pliku")
 
-        if current_episode % 1000 == 0:
-            recent_scores = scores[-1000:] if len(scores) >= 1000 else scores
-            better = [i for i in recent_scores if i > 1000]
+        how_often = 100
+        if current_episode % how_often == 0:
+            recent_scores = scores[-how_often:] if len(scores) >= how_often else scores
+            better = [i for i in recent_scores if i > 100]
 
             print(f"Episode: {current_episode}, Avg: {mean(recent_scores):.1f}, Avg dla > 100: {mean(better) if better else 0:.1f}, Max: {max(recent_scores):.1f}, Min: {min(recent_scores):.1f}, Std: {std(recent_scores):.1f}, Epsilon: {ai.epsilon:.5f}, Baseline: {(np.mean(ai.baseline_scores) if ai.baseline_scores else 0):.1f}, Time: {(time() - t):.1f}")
             t = time()
