@@ -48,24 +48,28 @@ class MCTSNode:
         self.children.append(child_node)
         return child_node
 
-    def evaluate_action_with_uncertainty(self, simulations=10, max_moves=200):
-        total_score = 0
-
-        for _ in range(simulations):
-            total_score += self.single_rollout(max_moves)
-
-        return total_score / simulations
-
-    def single_rollout(self, max_moves=200):
-        current_state = self.state.copy()
+    def rollout(self, state, action, depth, max_depth, max_moves=5):
+        current_state = state.copy()
         moves = 0
+
+        shop_index = action // 64
+        row = (action % 64) // 8
+        col = action % 8
+
+        success = current_state.place_shape(shop_index, row, col)
+        if not success:
+            return -1
+        moves += 1
+
+        if current_state.is_game_over():
+            return -1
 
         while not current_state.is_game_over() and moves < max_moves:
             valid_actions = current_state.get_all_valid_actions()
             if not valid_actions:
                 break
 
-            action = self.rollout_policy(current_state, valid_actions)
+            action = self.rollout_policy(current_state, valid_actions, depth, max_depth)
 
             shop_index = action // 64
             row = (action % 64) // 8
@@ -78,12 +82,82 @@ class MCTSNode:
 
         return current_state.score
 
-    def rollout_policy(self, state, valid_actions):
+    def simple_rollout_policy(self, state, valid_actions):
+        best_actions = []
+        best_score_increase = -1
+
+        for action in valid_actions:
+            test_state = state.copy()
+            shop_index = action // 64
+            row = (action % 64) // 8
+            col = action % 8
+
+            old_score = test_state.score
+            success = test_state.place_shape(shop_index, row, col)
+
+            if success:
+                score_increase = test_state.score - old_score
+                if score_increase > best_score_increase:
+                    best_score_increase = score_increase
+                    best_actions = [action]
+                elif score_increase == best_score_increase:
+                    best_actions.append(action)
+
+        if best_actions and best_score_increase > 1:
+            return random.choice(best_actions)
+
+        return random.choice(valid_actions)
+
+    def evaluate_action_with_uncertainty(self, state, action, depth, max_depth, simulations=3):
+        total_score = 0
+
+        for _ in range(simulations):
+            total_score += self.rollout(state, action, depth, max_depth)
+
+        return total_score / simulations
+
+    def single_rollout(self, max_moves=10):
+        current_state = self.state.copy()
+        moves = 0
+
+        if current_state.is_game_over():
+            return -1
+
+        while not current_state.is_game_over() and moves < max_moves:
+            valid_actions = current_state.get_all_valid_actions()
+            if not valid_actions:
+                break
+
+            action = self.rollout_policy(current_state, valid_actions, 0, 10)
+
+            shop_index = action // 64
+            row = (action % 64) // 8
+            col = action % 8
+
+            success = current_state.place_shape(shop_index, row, col)
+            if not success:
+                break
+            moves += 1
+
+        return current_state.score
+
+    def rollout_policy(self, state, valid_actions, depth=0, max_depth=10):
+        if depth >= max_depth:
+            return state.score
+
+        remaining_shapes = 0
+        for shape in state.shop:
+            if np.any(shape):
+                remaining_shapes += 1
+
+        if remaining_shapes > 1 or len(valid_actions) > 5:
+            return self.simple_rollout_policy(state, valid_actions)
+
         best_action = None
         best_score = -1
 
         for action in valid_actions:
-            score = self.evaluate_action_with_uncertainty(state, action)
+            score = self.evaluate_action_with_uncertainty(state, action, depth + 1, max_depth)
             if score > best_score:
                 best_score = score
                 best_action = action
@@ -113,7 +187,7 @@ class MCTS:
             if node is None:
                 break
 
-            reward = node.rollout()
+            reward = node.single_rollout()
             node.backpropagate(reward)
             iterations += 1
 
