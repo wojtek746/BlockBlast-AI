@@ -7,7 +7,7 @@ from torch import FloatTensor, no_grad, save
 from torch.nn import functional as F
 import random
 import numpy as np
-from plansza import funkcja
+from plansza import predicted_reward
 
 def run_single_episode(actor_network_state, epsilon, episode_num):
     from GameAI import ActorNetwork
@@ -38,6 +38,7 @@ def run_single_episode(actor_network_state, epsilon, episode_num):
 
     game = GameSimulator()
     game.start(episode_num)
+    predicted_reward(game)
 
     episode_transitions = []  # (state, action, reward, next_state, done, valid_actions)
 
@@ -52,14 +53,13 @@ def run_single_episode(actor_network_state, epsilon, episode_num):
 
         shop_index, row, col = action // 64, (action % 64) // 8, action % 8
 
-        old_score = game.score
         success = game.place_shape(shop_index, row, col)
 
         if not success:
             print("nie udało się postawić kształtu")
             continue
 
-        reward = funkcja(game)
+        reward = predicted_reward(game)
         done = game.is_game_over()
         next_state = game.get_state()
 
