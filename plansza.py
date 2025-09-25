@@ -6,6 +6,7 @@
 
 # it is my static variable in Python -PR-
 ocena_planszy = 0
+penalty_for_losing = -1000
 
 
 # „predicted_reward” — ocena planszy (8x8)-T/F -PR-

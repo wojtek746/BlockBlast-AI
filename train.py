@@ -7,15 +7,15 @@ from torch import FloatTensor, no_grad, save
 from torch.nn import functional as F
 import random
 import numpy as np
-from plansza import predicted_reward
+from plansza import predicted_reward, penalty_for_losing
 
-def run_single_episode(actor_network_state, epsilon, episode_num):
-    from GameAI import ActorNetwork
+def run_single_episode(policy_network_state, epsilon, episode_num):
+    from GameAI import PolicyNetwork
 
     device = torch_device("cpu")
-    actor_network = ActorNetwork().to(device)
-    actor_network.load_state_dict({k: v.cpu() for k, v in actor_network_state.items()})
-    actor_network.eval()
+    policy_network = PolicyNetwork().to(device)
+    policy_network.load_state_dict({k: v.cpu() for k, v in policy_network_state.items()})
+    policy_network.eval()
 
     def simple_act(state, valid_actions):
         if random.random() < epsilon:
@@ -24,7 +24,7 @@ def run_single_episode(actor_network_state, epsilon, episode_num):
         state_tensor = FloatTensor(state).unsqueeze(0)
 
         with no_grad():
-            logits = actor_network(state_tensor)
+            logits = policy_network(state_tensor)
 
         masked_logits = logits.clone()
         valid_set = set(valid_actions)
@@ -32,15 +32,13 @@ def run_single_episode(actor_network_state, epsilon, episode_num):
             if i not in valid_set:
                 masked_logits[0][i] = float('-inf')
 
-        action = F.softmax(masked_logits, dim=1).multinomial(1).item()
-
-        return action
+        return F.softmax(masked_logits, dim=1).multinomial(1).item()
 
     game = GameSimulator()
     game.start(episode_num)
-    predicted_reward(game, 0)
+    predicted_reward(game.board, 0)
 
-    episode_transitions = []  # (state, action, reward, next_state, done, valid_actions)
+    episode_transitions = []  # (state, action, reward)
 
     while not game.is_game_over():
         valid_actions = game.get_all_valid_actions()
@@ -53,23 +51,18 @@ def run_single_episode(actor_network_state, epsilon, episode_num):
 
         shop_index, row, col = action // 64, (action % 64) // 8, action % 8
 
-        # blocks = 0
-        # for i in game.shapes[shop_index]:
-        #     for j in i:
-        #         if j:
-        #             blocks += 1 #Piotr powiedział, że będzie potrzebne, ale nie wiem, gdzie xd
-
         success, lines_cleared = game.place_shape(shop_index, row, col)
 
         if not success:
             print("nie udało się postawić kształtu")
             continue
 
-        reward = predicted_reward(game, lines_cleared)
+        reward = predicted_reward(game.board, lines_cleared)
         done = game.is_game_over()
-        next_state = game.get_state()
+        if done:
+            reward += penalty_for_losing
 
-        episode_transitions.append((state, action, reward, next_state, done, valid_actions))
+        episode_transitions.append((state, action, reward))
 
     return episode_transitions, game.score
 
@@ -101,9 +94,12 @@ class PipelinedTrainer:
         return all_transitions, batch_scores
 
     def train_on_batch(self, all_transitions):
-        for transition in all_transitions:
-            self.ai.store_transition(*transition)
-        self.ai.update_networks(batch_size=min(256, len(all_transitions)))
+        episodes = {}
+        for state, action, reward, next_state, done, valid_actions in all_transitions:
+            self.ai.store_transition(state, action, reward, next_state, done, valid_actions)
+            if done:
+                final_score = sum(t[2] for t in self.ai.episode_data)
+                self.ai.finish_episode(final_score)
 
 def train_ai():
     from GameAI import GameAI
@@ -140,13 +136,7 @@ def train_ai():
             recent_scores = scores[-1000:] if len(scores) >= 1000 else scores
             better = [i for i in recent_scores if i > 1000]
 
-            empty_board_game = GameSimulator()
-            empty_board_game.reload_shop()
-
-            normal_start_game = GameSimulator()
-            normal_start_game.start(current_episode)
-
-            print(f"Episode: {current_episode}, Avg: {mean(recent_scores):.1f}, Avg dla > 100: {mean(better) if better else 0:.1f}, Max: {max(recent_scores):.1f}, Min: {min(recent_scores):.1f}, Std: {std(recent_scores):.1f}, Epsilon: {ai.epsilon:.5f}, Empty_Board+Shop: {ai.get_state_value(empty_board_game.get_state()):.1f}, Completely_Empty: {ai.get_state_value(GameSimulator().get_state()):.1f}, Normalny_Start: {ai.get_state_value(normal_start_game.get_state()):.1f}, Time: {(time() - t):.1f}")
+            print(f"Episode: {current_episode}, Avg: {mean(recent_scores):.1f}, Avg dla > 100: {mean(better) if better else 0:.1f}, Max: {max(recent_scores):.1f}, Min: {min(recent_scores):.1f}, Std: {std(recent_scores):.1f}, Epsilon: {ai.epsilon:.5f}, Baseline: {ai.get_baseline():.1f}, Time: {(time() - t):.1f}")
             t = time()
 
         if current_episode % 10000 == 0:
