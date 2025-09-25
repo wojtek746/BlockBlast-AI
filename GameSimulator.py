@@ -378,7 +378,7 @@ class GameSimulator:
         self.shop[shop_index] = np.zeros((5, 5), dtype=bool)
         if all(np.array_equal(s, np.zeros((5, 5), dtype=bool)) for s in self.shop):
             self.reload_shop()
-        return True
+        return (True, lines_cleared)
 
     def clear_full_lines(self):
         lines_to_remove = []

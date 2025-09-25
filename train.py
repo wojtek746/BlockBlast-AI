@@ -38,7 +38,7 @@ def run_single_episode(actor_network_state, epsilon, episode_num):
 
     game = GameSimulator()
     game.start(episode_num)
-    predicted_reward(game)
+    predicted_reward(game, 0)
 
     episode_transitions = []  # (state, action, reward, next_state, done, valid_actions)
 
@@ -53,13 +53,19 @@ def run_single_episode(actor_network_state, epsilon, episode_num):
 
         shop_index, row, col = action // 64, (action % 64) // 8, action % 8
 
-        success = game.place_shape(shop_index, row, col)
+        # blocks = 0
+        # for i in game.shapes[shop_index]:
+        #     for j in i:
+        #         if j:
+        #             blocks += 1 #Piotr powiedział, że będzie potrzebne, ale nie wiem, gdzie xd
+
+        success, lines_cleared = game.place_shape(shop_index, row, col)
 
         if not success:
             print("nie udało się postawić kształtu")
             continue
 
-        reward = predicted_reward(game)
+        reward = predicted_reward(game, lines_cleared)
         done = game.is_game_over()
         next_state = game.get_state()
 
