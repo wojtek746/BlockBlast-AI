@@ -75,31 +75,30 @@ class PipelinedTrainer:
         self.executor = ProcessPoolExecutor(max_workers=num_workers)
 
     def start_simulation_batch(self, episode_num):
-        actor_network_state = {k: v.cpu() for k, v in self.ai.actor_network.state_dict().items()}
+        policy_network_state = {k: v.cpu() for k, v in self.ai.policy_network.state_dict().items()}
         current_epsilon = self.ai.epsilon
 
-        futures = [self.executor.submit(run_single_episode, actor_network_state, current_epsilon, episode_num) for _ in range(self.batch_episodes)]
+        futures = [self.executor.submit(run_single_episode, policy_network_state, current_epsilon, episode_num) for _ in range(self.batch_episodes)]
 
         return futures
 
     def collect_simulation_results(self, futures):
-        all_transitions = []
+        all_episodes = []
         batch_scores = []
 
         for future in futures:
             episode_transitions, score = future.result()
-            all_transitions.extend(episode_transitions)
+            all_episodes.extend((episode_transitions, score))
             batch_scores.append(score)
 
-        return all_transitions, batch_scores
+        return all_episodes, batch_scores
 
-    def train_on_batch(self, all_transitions):
-        episodes = {}
-        for state, action, reward, next_state, done, valid_actions in all_transitions:
-            self.ai.store_transition(state, action, reward, next_state, done, valid_actions)
-            if done:
-                final_score = sum(t[2] for t in self.ai.episode_data)
-                self.ai.finish_episode(final_score)
+    def train_on_batch(self, all_episodes):
+        for episode_transitions, final_score in all_episodes:
+            self.ai.episode_data = []
+            for state, action, reward in episode_transitions:
+                self.ai.episode_data.append((state, action, reward, []))
+            self.ai.finish_episode(final_score)
 
 def train_ai():
     from GameAI import GameAI
@@ -118,12 +117,12 @@ def train_ai():
     t = time()
     for episode_batch in range(0, episodes, trainer.batch_episodes):
 
-        all_transitions, batch_scores = trainer.collect_simulation_results(current_futures)
+        all_episodes, batch_scores = trainer.collect_simulation_results(current_futures)
         scores.extend(batch_scores)
 
         if episode_batch + trainer.batch_episodes < episodes:
             current_futures = trainer.start_simulation_batch(episode_batch + trainer.batch_episodes)
-        trainer.train_on_batch(all_transitions)
+        trainer.train_on_batch(all_episodes)
 
         current_episode = episode_batch + trainer.batch_episodes
         ai.update_epsilon()
@@ -136,14 +135,11 @@ def train_ai():
             recent_scores = scores[-1000:] if len(scores) >= 1000 else scores
             better = [i for i in recent_scores if i > 1000]
 
-            print(f"Episode: {current_episode}, Avg: {mean(recent_scores):.1f}, Avg dla > 100: {mean(better) if better else 0:.1f}, Max: {max(recent_scores):.1f}, Min: {min(recent_scores):.1f}, Std: {std(recent_scores):.1f}, Epsilon: {ai.epsilon:.5f}, Baseline: {ai.get_baseline():.1f}, Time: {(time() - t):.1f}")
+            print(f"Episode: {current_episode}, Avg: {mean(recent_scores):.1f}, Avg dla > 100: {mean(better) if better else 0:.1f}, Max: {max(recent_scores):.1f}, Min: {min(recent_scores):.1f}, Std: {std(recent_scores):.1f}, Epsilon: {ai.epsilon:.5f}, Baseline: {(np.mean(ai.baseline_scores) if ai.baseline_scores else 0):.1f}, Time: {(time() - t):.1f}")
             t = time()
 
         if current_episode % 10000 == 0:
-            save({
-                'actor': ai.actor_network.state_dict(),
-                'critic': ai.critic_network.state_dict()
-            }, 'trained_model.pt')
+            save(ai.policy_network.state_dict(), 'trained_model.pt')
             print("zapisano model")
 
     trainer.executor.shutdown()

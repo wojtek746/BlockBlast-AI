@@ -125,6 +125,3 @@ class GameAI:
 
     def update_epsilon(self):
         self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
-
-    def get_baseline(self):
-        return np.mean(self.baseline_scores) if self.baseline_scores else 0.0
