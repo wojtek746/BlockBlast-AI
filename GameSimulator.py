@@ -198,7 +198,7 @@ class GameSimulator:
         else:
             ratio = uniform(0.1, 0.7)
 
-        target_cells = int(64 * 0.1)
+        target_cells = int(64 * 0.05)
         positions = [(i, j) for i in range(8) for j in range(8)]
         filled_positions = sample(positions, target_cells)
         for i, j in filled_positions:
@@ -365,7 +365,7 @@ class GameSimulator:
             for j in range(len(shape[0])):
                 if shape[i][j]:
                     self.board[row + i][col + j] = True
-                    self.score += 1
+                    self.score += 1 #bo myliło ai
 
         lines_cleared = self.clear_full_lines()
 
@@ -432,8 +432,8 @@ class GameSimulator:
         valid = self.get_all_valid_actions()
         return np.concatenate([
             self.board.flatten().astype(float), #64
-            [np.sum(self.board[i]) / 8 for i in range(8)], #8
-            [np.sum(self.board[:, j]) / 8 for j in range(8)], #8
+            [8 - np.sum(self.board[i]) for i in range(8)], #8
+            [8 - np.sum(self.board[:, j]) for j in range(8)], #8
             [1 if sum >= 6 else 0 for sum in row_fullness], #8
             [1 if sum >= 6 else 0 for sum in col_fullness], #8
             np.zeros(64, dtype=float), #64 #dla przyszłych liczb na kafelkach

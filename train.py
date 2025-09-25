@@ -6,6 +6,7 @@ from torch import device as torch_device
 from torch import FloatTensor, no_grad, save
 from torch.nn import functional as F
 import random
+import numpy as np
 
 def run_single_episode(actor_network_state, epsilon, episode_num):
     from GameAI import ActorNetwork
@@ -87,7 +88,7 @@ class PipelinedTrainer:
 
         for future in futures:
             episode_transitions, score = future.result()
-            all_transitions.append((episode_transitions, score))
+            all_transitions.extend(episode_transitions)
             batch_scores.append(score)
 
         return all_transitions, batch_scores
@@ -129,12 +130,16 @@ def train_ai():
             print("zapisano training do pliku")
 
         if current_episode % 1000 == 0:
-            recent_scores = scores[-100:] if len(scores) >= 100 else scores
-            better = [i for i in recent_scores if i > 100]
-            sample_state = GameSimulator().get_state()
-            state_value = ai.get_state_value(sample_state)
+            recent_scores = scores[-1000:] if len(scores) >= 1000 else scores
+            better = [i for i in recent_scores if i > 1000]
 
-            print(f"Episode: {current_episode}, Avg: {mean(recent_scores):.1f}, Avg dla > 100: {mean(better) if better else 0:.1f}, Max: {max(recent_scores):.1f}, Min: {min(recent_scores):.1f}, Std: {std(recent_scores):.1f}, Epsilon: {ai.epsilon:.5f}, State_Value: {state_value:.1f}, Time: {(time() - t):.1f}")
+            empty_board_game = GameSimulator()
+            empty_board_game.reload_shop()
+
+            normal_start_game = GameSimulator()
+            normal_start_game.start(current_episode)
+
+            print(f"Episode: {current_episode}, Avg: {mean(recent_scores):.1f}, Avg dla > 100: {mean(better) if better else 0:.1f}, Max: {max(recent_scores):.1f}, Min: {min(recent_scores):.1f}, Std: {std(recent_scores):.1f}, Epsilon: {ai.epsilon:.5f}, Empty_Board+Shop: {ai.get_state_value(empty_board_game.get_state()):.1f}, Completely_Empty: {ai.get_state_value(GameSimulator().get_state()):.1f}, Normalny_Start: {ai.get_state_value(normal_start_game.get_state()):.1f}, Time: {(time() - t):.1f}")
             t = time()
 
         if current_episode % 10000 == 0:
