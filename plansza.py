@@ -13,21 +13,24 @@ def predicted_reward(state):
 	global ocena_planszy # static -PR-
 	nowa_ocena_planszy = 0
 	T = [[True] * 10 for _ in range(10)]
+	ki, kj = [0] * 10, [True] * 10 # kubełek i oraz kubełek j -PR-
 	board = state.board
-	print(board)
 
 	for i in range(8):
 		for j in range(8):
-			print(i, j, board[i][j])
 			T[i+1][j+1] = board[i][j] # kopiowanie -PR-
+
 
 	for i in range(1, 9):
 		for j in range(1, 9):
 			neighbours = T[i+1][j]+T[i][j+1]+T[i-1][j]+T[i][j-1]
 			if T[i][j] == 1:
-				nowa_ocena_planszy += [-10, 0, 10, 20, 30][neighbours] # to do
+				nowa_ocena_planszy += [-20,-18,-15,-10,  0][neighbours] # to do
 			else:
-				nowa_ocena_planszy += [10, 0, 0, 0, -200][neighbours]  # to do
+				nowa_ocena_planszy += [  0,  0, 0, -20,-50][neighbours] # to do
+
+	ocena = nowa_ocena_planszy - ocena_planszy
+	ocena_planszy = nowa_ocena_planszy
 
 	ocena = nowa_ocena_planszy - ocena_planszy
 	ocena_planszy = nowa_ocena_planszy
