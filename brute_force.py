@@ -1,6 +1,7 @@
 from plansza import predicted_reward, penalty_for_losing
 from GameSimulator import GameSimulator
 from time import time
+from numpy import mean, std
 
 def best_action(state, valid_actions):
     best = None
@@ -16,7 +17,6 @@ def best_action(state, valid_actions):
     return best
 
 def run():
-    t = time()
     game = GameSimulator()
     game.start(0)
     moves = 0
@@ -34,7 +34,18 @@ def run():
             print("nie udało się postawić kształtu")
             continue
         moves += 1
-    print(f"Score: {game.score}, Moves: {moves}, Time: {time() - t}")
+    return game.score, moves
+
+def loop():
+    loops = 100
+    scores = []
+    moves = []
+    t = time()
+    for _ in range(loops):
+        score, move = run()
+        scores.append(score)
+        moves.append(move)
+    print(f"Avg: {mean(scores):.1f}, Avg Moves: {mean(moves):.1f}, Max: {max(scores)}, Min: {min(scores)}, Std: {std(scores):.1f}, Time: {time() - t}")
 
 if __name__ == "__main__":
-    run()
+    loop()
