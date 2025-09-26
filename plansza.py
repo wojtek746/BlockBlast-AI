@@ -1,7 +1,7 @@
 # Author           : Piotr Raczek
 # Created On       : 25.09.2025
 # Last Modified By : Piotr Raczek
-# Last Modified On : 25.09.2025
+# Last Modified On : 26.09.2025
 
 
 # configuration variables
@@ -32,9 +32,6 @@ def predicted_reward(board, lines_cleared, ocena_planszy=ocena_planszy):
 				neighbours += T[i+1][j+1]+T[i+1][j-1]+T[i-1][j+1]+T[i-1][j-1]
 				nowa_ocena_planszy += [  0, -1, -3, -5, -9, -14, -20, -27, -35][neighbours] # to do
 
-	ocena = nowa_ocena_planszy - ocena_planszy
-	ocena_planszy = nowa_ocena_planszy
-
 	ocena = nowa_ocena_planszy - ocena_planszy + 500 * lines_cleared
 	ocena_planszy = nowa_ocena_planszy
-	return (ocena + 50) * 10
+	return ocena * 10
