@@ -16,13 +16,12 @@ ocena_planszy = 0
 def predicted_reward(board, lines_cleared):
 	global ocena_planszy # static -PR-
 	nowa_ocena_planszy = 0
-	T = [[True] * 10 for _ in range(10)]
-	ki, kj = [0] * 10, [True] * 10 # kubełek i oraz kubełek j -PR-
+	T = [[1] * 10 for _ in range(10)]
+	ki, kj = [0] * 10, [0] * 10 # kubełek i oraz kubełek j -PR-
 
 	for i in range(8):
 		for j in range(8):
-			T[i+1][j+1] = board[i][j] # kopiowanie -PR-
-
+			T[i+1][j+1] = int(board[i][j]) # kopiowanie -PR-
 
 	for i in range(1, 9):
 		for j in range(1, 9):
