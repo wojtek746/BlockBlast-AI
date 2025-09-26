@@ -4,7 +4,7 @@ import random
 import numpy as np
 
 class PolicyNetwork(nn.Module):
-    def __init__(self, input_size=238, hidden_size=2048, output_size=192):
+    def __init__(self, input_size=174, hidden_size=2048, output_size=192):
         super(PolicyNetwork, self).__init__()
         self.network = nn.Sequential(
             nn.Linear(input_size, hidden_size),
@@ -51,7 +51,6 @@ class GameAI:
         try:
             state = load(self.memory_file, weights_only=False)
             self.epsilon = state.get('epsilon', self.epsilon)
-            self.epsilon = 0 #było 0.41
             self.baseline_scores = state.get('baseline_scores', [])
             self.policy_network.load_state_dict(state['policy_network_state'])
         except FileNotFoundError:

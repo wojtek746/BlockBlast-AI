@@ -13,8 +13,8 @@ ocena_planszy = 0
 
 
 # „predicted_reward” — ocena planszy (8x8)-T/F -PR-
-def predicted_reward(board, lines_cleared):
-	global ocena_planszy # static -PR-
+def predicted_reward(board, lines_cleared, ocena_planszy=ocena_planszy):
+	#global ocena_planszy # static -PR-
 	nowa_ocena_planszy = 0
 	T = [[1] * 10 for _ in range(10)]
 	ki, kj = [0] * 10, [0] * 10 # kubełek i oraz kubełek j -PR-
@@ -35,6 +35,6 @@ def predicted_reward(board, lines_cleared):
 	ocena = nowa_ocena_planszy - ocena_planszy
 	ocena_planszy = nowa_ocena_planszy
 
-	ocena = nowa_ocena_planszy - ocena_planszy + 100 * lines_cleared
+	ocena = nowa_ocena_planszy - ocena_planszy + 500 * lines_cleared
 	ocena_planszy = nowa_ocena_planszy
 	return (ocena + 50) * 10
