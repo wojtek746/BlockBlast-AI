@@ -159,7 +159,7 @@ def train_ai():
             ai.save_training_state()
             print("zapisano training do pliku")
 
-        how_often = 100
+        how_often = 1000
         if current_episode % how_often == 0:
             recent_scores = scores[-how_often:] if len(scores) >= how_often else scores
             better = [i for i in recent_scores if i > 100]

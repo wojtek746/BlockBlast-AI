@@ -436,7 +436,6 @@ class GameSimulator:
             [8 - np.sum(self.board[:, j]) for j in range(8)], #8 (liczba pustych kafelków w pionie)
             [1 if sum >= 6 else 0 for sum in row_fullness], #8 (czy wiersz ma przynajmniej 6 kafelków)
             [1 if sum >= 6 else 0 for sum in col_fullness], #8 (czy kolumna ma przynajmniej 6 kafelków)
-            np.zeros(64, dtype=float), #64 #dla przyszłych liczb na kafelkach
             self.shop[0].flatten().astype(float), #25 (sklep 5x5)
             self.shop[1].flatten().astype(float), #25 (sklep 5x5)
             self.shop[2].flatten().astype(float), #25 (sklep 5x5)
