@@ -34,4 +34,7 @@ def predicted_reward(board, lines_cleared, ocena_planszy=ocena_planszy):
 
 	ocena = nowa_ocena_planszy - ocena_planszy + 500 * lines_cleared
 	ocena_planszy = nowa_ocena_planszy
-	return ocena * 10
+
+	ocena = nowa_ocena_planszy - ocena_planszy + 500 * lines_cleared
+	ocena_planszy = nowa_ocena_planszy
+	return (ocena + 50) * 10
