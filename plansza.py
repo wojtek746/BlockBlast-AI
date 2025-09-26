@@ -30,7 +30,7 @@ def predicted_reward(board, lines_cleared):
 				nowa_ocena_planszy += [0, 0, 2, 3, 5, 10][neighbours] # to do
 			else:
 				neighbours += T[i+1][j+1]+T[i+1][j-1]+T[i-1][j+1]+T[i-1][j-1]
-				nowa_ocena_planszy += [  0, -1, -3, -5, -9, -14, -25, -50, -100][neighbours] # to do
+				nowa_ocena_planszy += [  0, -1, -3, -5, -9, -14, -20, -27, -35][neighbours] # to do
 
 	ocena = nowa_ocena_planszy - ocena_planszy
 	ocena_planszy = nowa_ocena_planszy
