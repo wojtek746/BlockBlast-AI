@@ -1,3 +1,5 @@
+from multiprocessing import cpu_count
+from concurrent.futures import ProcessPoolExecutor
 from random import choice
 from plansza import predicted_reward, penalty_for_losing
 from GameSimulator import GameSimulator
@@ -19,9 +21,12 @@ def best_action(state, valid_actions):
                 best_reward = reward
             elif reward == best_reward:
                 best.append(action)
+        else:
+            print("nic nie wybrano")
     return choice(best)
 
 def run():
+    t = time()
     game = GameSimulator()
     game.start(0)
     moves = 0
@@ -39,18 +44,24 @@ def run():
             print("nie udało się postawić kształtu")
             continue
         moves += 1
+    print(f"skończyłem po {time()-t:.1f}s")
     return game.score, moves
 
 def loop():
-    loops = 100
-    scores = []
-    moves = []
+    num_workers = max(1, cpu_count() - 10)
+    loops = 10
+    print(f"Używam {num_workers} procesów równoległych do {loops} gier")
+
     t = time()
-    for _ in range(loops):
-        score, move = run()
-        scores.append(score)
-        moves.append(move)
-    print(f"Avg: {mean(scores):.1f}, Avg Moves: {mean(moves):.1f}, Max: {max(scores)}, Min: {min(scores)}, Std: {std(scores):.1f}, Time: {time() - t}")
+    with ProcessPoolExecutor(max_workers=num_workers) as executor:
+        futures = [executor.submit(run) for i in range(loops)]
+        scores = []
+        moves = []
+        for i, future in enumerate(futures):
+            score, move = future.result()
+            scores.append(score)
+            moves.append(move)
+    print(f"Avg: {mean(scores):.1f}, Avg Moves: {mean(moves):.1f}, Max: {max(scores)}, Min: {min(scores)}, Std: {std(scores):.1f}, Time: {time() - t:.1f}")
 
 if __name__ == "__main__":
     loop()
