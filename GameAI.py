@@ -3,7 +3,7 @@ from torch.nn import functional as F
 import random
 import numpy as np
 
-class PolicyNetwork(nn.Module):
+class PolicyNetwork(nn.Module): #wielkość sieci, że ile neuronów ma mieć
     def __init__(self, input_size=174, hidden_size=2048, output_size=192):
         super(PolicyNetwork, self).__init__()
         self.network = nn.Sequential(

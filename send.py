@@ -138,7 +138,9 @@ def array_of_shape(b, n):
             return None
     y = 1822
 
-    if isin(b, x+5, y+5) and isin(b, x+49, y+5) and isin(b, x+5, y+49) and isin(b, x+49, y+49):
+    if (isin(b, x+5, y+5) and isin(b, x+49, y+5) and isin(b, x+5, y+49) and isin(b, x+49, y+49) and
+            isin(b, x-5, y+5) and isin(b, x-5, y+49) and isin(b, x+59, y+5) and isin(b, x+59, y+49) and
+            isin(b, x+5, y-5) and isin(b, x+49, y-5) and isin(b, x+5, y+59) and isin(b, x+49, y+59)):
         return None
 
     if isin(b, x-5, y+5) and isin(b, x-5, y+49) and isin(b, x+59, y+5) and isin(b, x+59, y+49): #1xX
@@ -205,7 +207,7 @@ def board_to_number_array(board):
 def board_to_bool_array(board):
     start_x = 120
     start_y = 670
-    blanks = [(25, 36, 66), (66, 61, 123)]
+    blanks = [(25, 36, 66), (66, 61, 123), (66, 36, 25)]
     result = []
     for i in range(8):
         row = []
@@ -226,10 +228,11 @@ def main():
     number_array = board_to_number_array(board)
     for row in number_array:
         print(row)
-    # shapes = []
-    # shapes.append(array_of_shape(board, 1))
-    # shapes.append(array_of_shape(board, 2))
-    # shapes.append(array_of_shape(board, 3))
+    shapes = []
+    shapes.append(array_of_shape(board, 1))
+    shapes.append(array_of_shape(board, 2))
+    shapes.append(array_of_shape(board, 3))
+    print(shapes[0], shapes[1], shapes[2], sep="\n")
 
     # for x in range(8):
     #     for y in range(8):

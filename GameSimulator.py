@@ -427,9 +427,10 @@ class GameSimulator:
         return True
 
     def get_state(self):
+        #funkcja wysyła stan gry do AI
         row_fullness = [np.sum(self.board[i]) for i in range(8)]
         col_fullness = [np.sum(self.board[:, j]) for j in range(8)]
-        valid = self.get_all_valid_actions()
+        valid = self.get_all_valid_actions() #zwraca wszystkie możliwości, jak można postawić kafelek
         return np.concatenate([
             self.board.flatten().astype(float), #64 (plansza 8x8)
             [8 - np.sum(self.board[i]) for i in range(8)], #8 (liczba pustych kafelków w poziomie)
