@@ -4,7 +4,7 @@ import random
 import numpy as np
 
 class PolicyNetwork(nn.Module): #wielkość sieci, że ile neuronów ma mieć
-    def __init__(self, input_size=174, hidden_size=2048, output_size=192):
+    def __init__(self, input_size=139, hidden_size=2048, output_size=192):
         super(PolicyNetwork, self).__init__()
         self.network = nn.Sequential(
             nn.Linear(input_size, hidden_size),
@@ -22,7 +22,7 @@ class PolicyNetwork(nn.Module): #wielkość sieci, że ile neuronów ma mieć
         return self.network(x)
 
 class GameAI:
-    def __init__(self, learning_rate=0.0001, memory_file="ai_training_state.pt"):
+    def __init__(self, learning_rate=0.00001, memory_file="ai_training_state.pt"):
         self.device = device("cuda")
 
         self.policy_network = PolicyNetwork().to(self.device)
