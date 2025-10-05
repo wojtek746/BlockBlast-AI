@@ -3,6 +3,7 @@
 # Last Modified By : Piotr Raczek
 # Last Modified On : 26.09.2025
 
+import numpy as np
 
 # configuration variables
 penalty_for_losing = -1000
@@ -13,7 +14,7 @@ ocena_planszy = 0
 
 
 # „predicted_reward” — ocena planszy (8x8)-T/F -PR-
-def predicted_reward(board, lines_cleared, isWithoutOcenaPlanszy = False):
+def predicted_reward(board, lines_cleared, shop, isWithoutOcenaPlanszy = False):
 	global ocena_planszy # static -PR-
 	nowa_ocena_planszy = 0
 	T = [[1] * 10 for _ in range(10)]
@@ -36,4 +37,68 @@ def predicted_reward(board, lines_cleared, isWithoutOcenaPlanszy = False):
 	if not isWithoutOcenaPlanszy:
 		ocena -= ocena_planszy
 		ocena_planszy = nowa_ocena_planszy
-	return (ocena + 50) * 10
+	return (ocena + 50) * 10 + is_imposible_to_survive(board, shop) * penalty_for_losing
+
+def fits_on(board, shape, i, j):
+	for x in range(5):
+		for y in range(5):
+			if shape[x, y]:
+				if i + x >= 8 or j + y >= 8 or board[i+x,j+y]:
+					return False
+	return True
+
+def is_imposible_to_survive(board, shop):
+	zero = np.zeros((5, 5), dtype=bool)
+	if np.array_equal(shop[0], zero):
+		if np.array_equal(shop[1], zero):
+			if np.array_equal(shop[2], zero):
+				return 0
+			for i in range(8):
+				for j in range(8):
+					if fits_on(board, shop[2], i, j):
+						return 0
+			return 1
+		for i in range(8):
+			for j in range(8):
+				if fits_on(board, shop[1], i, j):
+					if np.array_equal(shop[2], zero):
+						return 0
+					b = board.copy()
+					for x in range(5):
+						for y in range(5):
+							if shop[1][x, y]:
+								b[i+x,j+y] = True
+					for i2 in range(8):
+						for j2 in range(8):
+							if fits_on(b, shop[2], i2, j2):
+								return 0
+		return 1
+	for i in range(8):
+		for j in range(8):
+			if fits_on(board, shop[0], i, j):
+				b = board.copy()
+				for x in range(5):
+					for y in range(5):
+						if shop[0][x, y]:
+							b[i+x,j+y] = True
+				if np.array_equal(shop[1], zero):
+					for i2 in range(8):
+						for j2 in range(8):
+							if fits_on(b, shop[2], i2, j2):
+								return 0
+				else:
+					for i1 in range(8):
+						for j1 in range(8):
+							if fits_on(b, shop[1], i1, j1):
+								if np.array_equal(shop[2], zero):
+									return 0
+								b2 = b.copy()
+								for x in range(5):
+									for y in range(5):
+										if shop[1][x, y]:
+											b2[i1+x,j1+y] = True
+								for i2 in range(8):
+									for j2 in range(8):
+										if fits_on(b2, shop[2], i2, j2):
+											return 0
+	return 1

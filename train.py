@@ -32,6 +32,14 @@ def run_single_episode(policy_network_state, epsilon, episode_num):
             if i not in valid_set:
                 masked_logits[0][i] = float('-inf')
 
+        valid_vals = logits[0, valid_actions]
+        invalid_idxs = [i for i in range(192) if i not in valid_set]
+        invalid_vals = logits[0, invalid_idxs]
+
+        # print("Valid mean:", valid_vals.mean().item(), "std:", valid_vals.std().item())
+        # print("Invalid mean:", invalid_vals.mean().item(), "std:", invalid_vals.std().item())
+        # print()
+
         return F.softmax(masked_logits, dim=1).multinomial(1).item()
 
     game = GameSimulator()

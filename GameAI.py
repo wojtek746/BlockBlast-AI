@@ -4,7 +4,7 @@ import random
 import numpy as np
 
 class PolicyNetwork(nn.Module): #wielkość sieci, że ile neuronów ma mieć
-    def __init__(self, input_size=139, hidden_size=2048, output_size=192):
+    def __init__(self, input_size=171, hidden_size=2048, output_size=192):
         super(PolicyNetwork, self).__init__()
         self.network = nn.Sequential(
             nn.Linear(input_size, hidden_size),
@@ -22,7 +22,7 @@ class PolicyNetwork(nn.Module): #wielkość sieci, że ile neuronów ma mieć
         return self.network(x)
 
 class GameAI:
-    def __init__(self, learning_rate=0.00001, memory_file="ai_training_state.pt"):
+    def __init__(self, learning_rate=0.0001, memory_file="ai_training_state.pt"):
         self.device = device("cuda")
 
         self.policy_network = PolicyNetwork().to(self.device)
@@ -32,9 +32,10 @@ class GameAI:
         self.episode_data = []  # (state, action, log_prob, reward)
         self.baseline_scores = []
 
-        self.epsilon = 0.1
-        self.epsilon_min = 0.0
-        self.epsilon_decay = 1
+        self.epsilon = 1
+        self.epsilon_min = 0.0000001
+        self.epsilon_max = 1
+        self.epsilon_decay = 0.999
 
         self.memory_file = memory_file
         self.load_training_state()
@@ -51,7 +52,7 @@ class GameAI:
         try:
             state = load(self.memory_file, weights_only=False)
             self.epsilon = state.get('epsilon', self.epsilon)
-            self.epsilon = 0.1
+            self.epsilon = 1
             self.baseline_scores = state.get('baseline_scores', [])
             self.policy_network.load_state_dict(state['policy_network_state'])
         except FileNotFoundError:
@@ -122,7 +123,9 @@ class GameAI:
         self.episode_data = []
 
     def update_epsilon(self):
-        self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
+        self.epsilon *= self.epsilon_decay
+        if self.epsilon < self.epsilon_min:
+            self.epsilon = self.epsilon_max
 
     def batch_update(self, states, actions, advantages, valid_actions_list):
         if not states:
