@@ -13,7 +13,7 @@ def best_action(state, valid_actions):
         new_state = state.copy()
         success, lines_cleared = new_state.place_shape(action // 64, (action % 64) // 8, action % 8)
         if success:
-            reward = predicted_reward(new_state.board, lines_cleared, 0)
+            reward = predicted_reward(new_state.board, lines_cleared, new_state.shop, 0)
             if new_state.is_game_over():
                 reward += penalty_for_losing
             if reward > best_reward:
