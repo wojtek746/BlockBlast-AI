@@ -350,7 +350,7 @@ class GameSimulator:
                         return False
         return True
 
-    def place_shape(self, shop_index, row, col):
+    def place_shape(self, shop_index, row, col, is_reload=True):
         if shop_index < 0 or shop_index >= 3:
             return False
 
@@ -376,7 +376,7 @@ class GameSimulator:
             self.score += self.combo_points(self.combo) * multiplier
 
         self.shop[shop_index] = np.zeros((5, 5), dtype=bool)
-        if all(np.array_equal(s, np.zeros((5, 5), dtype=bool)) for s in self.shop):
+        if is_reload and all(np.array_equal(s, np.zeros((5, 5), dtype=bool)) for s in self.shop):
             self.reload_shop()
         return (True, lines_cleared)
 

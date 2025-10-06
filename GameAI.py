@@ -33,7 +33,7 @@ class GameAI:
         self.baseline_scores = []
 
         self.epsilon = 1
-        self.epsilon_min = 0.0000001
+        self.epsilon_min = 0.00001
         self.epsilon_max = 1
         self.epsilon_decay = 0.999
 
@@ -52,7 +52,6 @@ class GameAI:
         try:
             state = load(self.memory_file, weights_only=False)
             self.epsilon = state.get('epsilon', self.epsilon)
-            self.epsilon = 1
             self.baseline_scores = state.get('baseline_scores', [])
             self.policy_network.load_state_dict(state['policy_network_state'])
         except FileNotFoundError:
