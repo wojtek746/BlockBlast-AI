@@ -82,6 +82,8 @@ def is_imposible_to_survive(board, shop):
 						if shop[0][x, y]:
 							b[i+x,j+y] = True
 				if np.array_equal(shop[1], zero):
+					if np.array_equal(shop[1], zero):
+						return 0
 					for i2 in range(8):
 						for j2 in range(8):
 							if fits_on(b, shop[2], i2, j2):
