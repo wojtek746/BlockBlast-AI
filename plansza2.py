@@ -48,6 +48,24 @@ def fits_on(board, shape, i, j):
                     return False
     return True
 
+def clear_lines(board):
+    lines_to_remove = []
+    for i in range(8):
+        if all(board[i]):
+            lines_to_remove.append(i)
+    for j in range(8):
+        col_full = True
+        for i in range(8):
+            if not board[i][j]:
+                col_full = False
+                break
+        if col_full:
+            for i in range(8):
+                board[i][j] = False
+    for i in lines_to_remove:
+        for j in range(8):
+            board[i][j] = False
+
 def is_imposible_to_survive(board, shop):
     if not shop[0]:
         if not shop[1]:
@@ -68,6 +86,7 @@ def is_imposible_to_survive(board, shop):
                         for y in range(5):
                             if shop[1][x][y]:
                                 b[i+x][j+y] = True
+                    clear_lines(b)
                     for i2 in range(8):
                         for j2 in range(8):
                             if fits_on(b, shop[2], i2, j2):
@@ -81,6 +100,7 @@ def is_imposible_to_survive(board, shop):
                     for y in range(5):
                         if shop[0][x][y]:
                             b[i+x][j+y] = True
+                clear_lines(b)
                 if not shop[1]:
                     if not shop[2]:
                         return 0
@@ -99,6 +119,7 @@ def is_imposible_to_survive(board, shop):
                                     for y in range(5):
                                         if shop[1][x][y]:
                                             b2[i1+x][j1+y] = True
+                                clear_lines(b2)
                                 for i2 in range(8):
                                     for j2 in range(8):
                                         if fits_on(b2, shop[2], i2, j2):

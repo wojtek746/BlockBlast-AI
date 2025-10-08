@@ -47,6 +47,17 @@ def fits_on(board, shape, i, j):
 					return False
 	return True
 
+def clear_lines(board):
+	lines_to_remove = []
+	for i in range(8):
+		if all(board[i]):
+			lines_to_remove.append(i)
+	for j in range(8):
+		if all(board[:, j]):
+			board[:, j] = False
+	for i in lines_to_remove:
+		board[i, :] = False
+
 def is_imposible_to_survive(board, shop):
 	zero = np.zeros((5, 5), dtype=bool)
 	if np.array_equal(shop[0], zero):
@@ -68,6 +79,7 @@ def is_imposible_to_survive(board, shop):
 						for y in range(5):
 							if shop[1][x, y]:
 								b[i+x,j+y] = True
+					clear_lines(b)
 					for i2 in range(8):
 						for j2 in range(8):
 							if fits_on(b, shop[2], i2, j2):
@@ -81,6 +93,7 @@ def is_imposible_to_survive(board, shop):
 					for y in range(5):
 						if shop[0][x, y]:
 							b[i+x,j+y] = True
+				clear_lines(b)
 				if np.array_equal(shop[1], zero):
 					if np.array_equal(shop[1], zero):
 						return 0
@@ -99,6 +112,7 @@ def is_imposible_to_survive(board, shop):
 									for y in range(5):
 										if shop[1][x, y]:
 											b2[i1+x,j1+y] = True
+								clear_lines(b2)
 								for i2 in range(8):
 									for j2 in range(8):
 										if fits_on(b2, shop[2], i2, j2):
