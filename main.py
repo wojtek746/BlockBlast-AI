@@ -18,6 +18,7 @@ def get_screenshot(filename='screen.png'):
     os.system("adb shell rm /sdcard/screen.png")
 
 def move(shop, action):
+    t = 1000
     shop_index, row, col = action // 64, (action % 64) // 8, action % 8
     match shop_index:
         case 0:
@@ -30,7 +31,7 @@ def move(shop, action):
             from_x = 855
             dx = -568
     from_y = 1849
-    dy = 510
+    dy = 690
 
     shape = shop[shop_index]
     x = -1
@@ -46,13 +47,13 @@ def move(shop, action):
     y += 1
 
     dx += x * 43
-    dy += y * 43
+    dy -= y * 43
 
     dx += col * 86
     dy -= row * 86
     print(row, col)
 
-    swipe(from_x, from_y, from_x + dx, from_y - dy, 1000)
+    swipe(from_x, from_y, from_x + dx, from_y - dy, t)
 
 blue = [(148, 81, 58), (148, 85, 58), (148, 85, 66), (140, 81, 58), (140, 73, 49), (132, 69, 49), (140, 77, 58), (132, 65, 41), (132, 65, 49), (140, 77, 49), (156, 85, 66)]
 
@@ -224,7 +225,9 @@ def step():
     move(shop, action)
 
 def main():
-    step()
+    for i in range(10):
+        step()
+        time.sleep(1)
 
 if __name__ == "__main__":
     main()
