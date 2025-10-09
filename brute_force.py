@@ -48,8 +48,8 @@ def run():
     return game.score, moves
 
 def loop():
-    num_workers = max(1, cpu_count() - 10)
-    loops = 100
+    num_workers = max(1, cpu_count() - 2)
+    loops = 10
     print(f"Używam {num_workers} procesów równoległych do {loops} gier")
 
     t = time()

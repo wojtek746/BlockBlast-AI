@@ -17,7 +17,7 @@ def predicted_reward(board, lines_cleared, shop, isWithoutOcenaPlanszy = False):
     global ocena_planszy # static -PR-
     nowa_ocena_planszy = 0
     T = [[1] * 10 for _ in range(10)]
-    ki, kj = [0] * 10, [0] * 10 # kubełek i oraz kubełek j -PR-
+    #ki, kj = [0] * 10, [0] * 10 # kubełek i oraz kubełek j -PR-
 
     for i in range(8):
         for j in range(8):
@@ -27,16 +27,18 @@ def predicted_reward(board, lines_cleared, shop, isWithoutOcenaPlanszy = False):
         for j in range(1, 9):
             neighbours = T[i+1][j]+T[i-1][j]+T[i][j+1]+T[i][j-1]
             if T[i][j] == True:
-                nowa_ocena_planszy += [0, 0, 2, 3, 5, 10][neighbours] # to do
+               nowa_ocena_planszy += 1 #per block
+               nowa_ocena_planszy += [0, 2, 6,12,20][neighbours] # to do
             else:
-                neighbours += T[i+1][j+1]+T[i+1][j-1]+T[i-1][j+1]+T[i-1][j-1]
-                nowa_ocena_planszy += [  0, -1, -3, -5, -9, -14, -20, -27, -35][neighbours] # to do
+               #neighbours += T[i+1][j+1]+T[i+1][j-1]+T[i-1][j+1]+T[i-1][j-1]
+               #nowa_ocena_planszy += [  0, -1, -3, -5, -9, -14, -20, -27, -35][neighbours] # to do
+               nowa_ocena_planszy += [ 4, 0, 0, -20, -80][neighbours] # to do
 
-    ocena = nowa_ocena_planszy + 500 * lines_cleared
+    ocena = nowa_ocena_planszy + 1000 * lines_cleared
     if not isWithoutOcenaPlanszy:
         ocena -= ocena_planszy
         ocena_planszy = nowa_ocena_planszy
-    return (ocena + 50) * 10 + is_imposible_to_survive(board, shop) * penalty_for_losing
+    return ocena #+ is_imposible_to_survive(board, shop) * penalty_for_losing
 
 def fits_on(board, shape, i, j):
     for x in range(5):

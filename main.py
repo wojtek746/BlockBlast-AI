@@ -51,7 +51,7 @@ def move(shop, action):
 
     dx += col * 86
     dy -= row * 86
-    print(row, col)
+    #print(row, col)
 
     swipe(from_x, from_y, from_x + dx, from_y - dy, t)
 
@@ -225,7 +225,7 @@ def step():
     move(shop, action)
 
 def main():
-    for i in range(10):
+    while True:
         step()
         time.sleep(1)
 
