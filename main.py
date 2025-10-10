@@ -1,21 +1,21 @@
 import copy
 import time
-import os
+import subprocess
 import cv2
 
 from plansza2 import predicted_reward, penalty_for_losing
 from random import choice
 
 def tap(x, y):
-    os.system(f"adb shell input tap {str(x)} {str(y)}")
+    subprocess.run(["adb", "shell", "input", "tap", str(x), str(y)])
 
 def swipe(x1, y1, x2, y2, duration_ms=300):
-    os.system(f"adb shell input swipe {str(x1)} {str(y1)} {str(x2)} {str(y2)} {str(duration_ms)}")
+    subprocess.run(["adb", "shell", "input", "swipe", str(x1), str(y1), str(x2), str(y2), str(duration_ms)])
 
 def get_screenshot(filename='screen.png'):
-    os.system("adb shell screencap -p /sdcard/screen.png")
-    os.system(f"adb pull /sdcard/screen.png {filename}")
-    os.system("adb shell rm /sdcard/screen.png")
+    subprocess.run(["adb", "shell", "screencap", "-p", "/sdcard/screen.png"])
+    subprocess.run(["adb", "pull", "/sdcard/screen.png", filename], stderr=subprocess.DEVNULL)
+    subprocess.run(["adb", "shell", "rm", "/sdcard/screen.png"])
 
 def move(shop, action):
     t = 1000
