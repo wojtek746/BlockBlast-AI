@@ -55,11 +55,17 @@ def move(shop, action):
 
     swipe(from_x, from_y, from_x + dx, from_y - dy, int(t*(dx**2+dy**2)**0.5)+10)
 
-blue = [(148, 81, 58), (148, 85, 58), (148, 85, 66), (140, 81, 58), (140, 73, 49), (132, 69, 49), (140, 77, 58), (132, 65, 41), (132, 65, 49), (140, 77, 49), (156, 85, 66)]
+#blue = [(148, 81, 58), (148, 85, 58), (148, 85, 66), (140, 81, 58), (140, 73, 49), (132, 69, 49), (140, 77, 58),
+#        (132, 65, 41), (132, 65, 49), (140, 77, 49), (156, 85, 66), (90, 45, 33), (90, 40, 33), (82, 40, 25),
+#        (90, 40, 25), (107, 57, 41), (115, 65, 49), (115, 61, 41), (115, 61, 49), (107, 61, 41)]
+red = [25, 33, 41, 49, 58, 66]
+green = [40, 45, 53, 57, 61, 65, 69, 73, 77, 81, 85]
+blue = [82, 90, 99, 107, 115, 123, 132, 140, 148, 156]
 
 def isin(board, x, y):
-    global blue
-    return tuple(board[y, x]) in blue
+    global red, green, blue
+    pixel = tuple(board[y, x])
+    return pixel[0] in blue and pixel[1] in green and pixel[2] in red
 
 def array_of_shape(b, n):
     global blue
@@ -79,8 +85,8 @@ def array_of_shape(b, n):
             isin(b, x+5, y-5) and isin(b, x+49, y-5) and isin(b, x+5, y+59) and isin(b, x+49, y+59)):
         return None
 
-    if isin(b, x-5, y+5) and isin(b, x-5, y+49) and isin(b, x+59, y+5) and isin(b, x+59, y+49) and isin(b, x-5, y-5) and isin(b, x+59, y-5): #1xX
-        if isin(b, x+5, y-5) and isin(b, x+49, y-5) and isin(b, x+5, y+59) and isin(b, x+49, y+59):
+    if isin(b, x-5, y+5) and isin(b, x-5, y+49) and isin(b, x+59, y+5) and isin(b, x+59, y+49) and isin(b, x-5, y-6) and isin(b, x+59, y-6): #1xX
+        if isin(b, x+5, y-6) and isin(b, x+49, y-6) and isin(b, x+5, y+59) and isin(b, x+49, y+59):
             return [[True, False, False, False, False], [False, False, False, False, False], [False, False, False, False, False], [False, False, False, False, False], [False, False, False, False, False]]
         if isin(b, x+5, y-32) and isin(b, x+49, y-32) and isin(b, x+5, y+86) and isin(b, x+49, y+86):
             return [[True, False, False, False, False], [True, False, False, False, False], [False, False, False, False, False], [False, False, False, False, False], [False, False, False, False, False]]
@@ -90,8 +96,8 @@ def array_of_shape(b, n):
             return [[True, False, False, False, False], [True, False, False, False, False], [True, False, False, False, False], [True, False, False, False, False], [False, False, False, False, False]]
         if isin(b, x+5, y-113) and isin(b, x+49, y-113) and isin(b, x+5, y+167) and isin(b, x+49, y+167):
             return [[True, False, False, False, False], [True, False, False, False, False], [True, False, False, False, False], [True, False, False, False, False], [True, False, False, False, False]]
-    if isin(b, x-32, y+5) and isin(b, x-32, y+49) and isin(b, x+86, y+5) and isin(b, x+86, y+49) and isin(b, x-32, y-5) and isin(b, x+86, y-5): #2xX
-        if isin(b, x+5, y-5) and isin(b, x+49, y-5) and isin(b, x+5, y+59) and isin(b, x+49, y+59):
+    if isin(b, x-32, y+5) and isin(b, x-32, y+49) and isin(b, x+86, y+5) and isin(b, x+86, y+49) and isin(b, x-32, y-6) and isin(b, x+86, y-6): #2xX
+        if isin(b, x+5, y-6) and isin(b, x+49, y-6) and isin(b, x+5, y+59) and isin(b, x+49, y+59):
             return [[True, True, False, False, False], [False, False, False, False, False], [False, False, False, False, False], [False, False, False, False, False], [False, False, False, False, False]]
         if isin(b, x+5, y-32) and isin(b, x+49, y-32) and isin(b, x+5, y+86) and isin(b, x+49, y+86):
             return [[not isin(b, x, y), not isin(b, x+54, y), False, False, False], [not isin(b, x, y+54), not isin(b, x+54, y+54), False, False, False], [False, False, False, False, False], [False, False, False, False, False], [False, False, False, False, False]]
@@ -102,7 +108,7 @@ def array_of_shape(b, n):
         if isin(b, x+5, y-113) and isin(b, x+49, y-113) and isin(b, x+5, y+167) and isin(b, x+49, y+167):
             return [[not isin(b, x, y-81), not isin(b, x+54, y-81), False, False, False], [not isin(b, x, y-27), not isin(b, x+54, y-27), False, False, False], [not isin(b, x, y+27), not(b, x+54, y+27), False, False, False], [not isin(b, x, y+81), not isin(b, x+54, y+81), False, False, False], [not isin(b, x, y+135), not isin(b, x+54, y+135), False, False, False]]
     if isin(b, x-59, y+5) and isin(b, x-59, y+49) and isin(b, x+113, y+5) and isin(b, x+113, y+49): #3xX
-        if isin(b, x+5, y-5) and isin(b, x+49, y-5) and isin(b, x+5, y+59) and isin(b, x+49, y+59) and isin(b, x-5, y-5) and isin(b, x-5, y+59):
+        if isin(b, x+5, y-6) and isin(b, x+49, y-6) and isin(b, x+5, y+59) and isin(b, x+49, y+59) and isin(b, x-5, y-6) and isin(b, x-5, y+59):
             return [[True, True, True, False, False], [False, False, False, False, False], [False, False, False, False, False], [False, False, False, False, False], [False, False, False, False, False]]
         if isin(b, x+5, y-32) and isin(b, x+49, y-32) and isin(b, x+5, y+86) and isin(b, x+49, y+86) and isin(b, x-32, y-32) and isin(b, x+86, y-32):
             return [[not isin(b, x-27, y), not isin(b, x+27, y), not isin(b, x+81, y), False, False], [not isin(b, x-27, y+54), not isin(b, x+27, y+54), not isin(b, x+81, y+54), False, False], [False, False, False, False, False], [False, False, False, False, False], [False, False, False, False, False]]
@@ -111,17 +117,18 @@ def array_of_shape(b, n):
         if isin(b, x+5, y-86) and isin(b, x+49, y-86) and isin(b, x+5, y+140) and isin(b, x+49, y+140):
             return [[not isin(b, x-27, y-54), not isin(b, x+27, y-54), not isin(b, x+81, y-54), False, False], [not isin(b, x-27, y), not isin(b, x+27, y), not isin(b, x+81, y), False, False], [not isin(b, x-27, y+54), not isin(b, x+27, y+54), not isin(b, x+81, y+54), False, False], [not isin(b, x-27, y+108), not isin(b, x+27, y+108), not isin(b, x+81, y+108), False, False], [False, False, False, False, False]]
     if isin(b, x-86, y+5) and isin(b, x-86, y+49) and isin(b, x+140, y+5) and isin(b, x+140, y+49): #4xX
-        if isin(b, x+5, y-5) and isin(b, x+49, y-5) and isin(b, x+5, y+59) and isin(b, x+49, y+59):
+        if isin(b, x+5, y-6) and isin(b, x+49, y-6) and isin(b, x+5, y+59) and isin(b, x+49, y+59):
             return [[True, True, True, True, False], [False, False, False, False, False], [False, False, False, False, False], [False, False, False, False, False], [False, False, False, False, False]]
         if isin(b, x+5, y-32) and isin(b, x+49, y-32) and isin(b, x+5, y+86) and isin(b, x+49, y+86):
             return [[not isin(b, x-54, y), not isin(b, x, y), not isin(b, x+54, y), not isin(b, x+108, y), False], [not isin(b, x-54, y+54), not isin(b, x, y+54), not isin(b, x+54, y+54), not isin(b, x+108, y+54), False], [False, False, False, False, False], [False, False, False, False, False], [False, False, False, False, False]]
         if isin(b, x+5, y-59) and isin(b, x+49, y-59) and isin(b, x+5, y+113) and isin(b, x+49, y+113):
             return [[not isin(b, x-54, y-27), not isin(b, x, y-27), not isin(b, x+54, y-27), not isin(b, x+108, y-27), False], [not isin(b, x-54, y+27), not isin(b, x, y+27), not isin(b, x+54, y+27), not isin(b, x+108, y+27), False], [not isin(b, x-54, y+81), not isin(b, x, y+81), not isin(b, x+54, y+81), not isin(b, x+108, y+81), False], [False, False, False, False, False], [False, False, False, False, False]]
     if isin(b, x-113, y+5) and isin(b, x-113, y+49) and isin(b, x+167, y+5) and isin(b, x+167, y+49): #5xX
-        if isin(b, x+5, y-5) and isin(b, x+49, y-5) and isin(b, x+5, y+59) and isin(b, x+49, y+59):
+        if isin(b, x+5, y-6) and isin(b, x+49, y-6) and isin(b, x+5, y+59) and isin(b, x+49, y+59):
             return [[True, True, True, True, True], [False, False, False, False, False], [False, False, False, False, False], [False, False, False, False, False], [False, False, False, False, False]]
         if isin(b, x+5, y-32) and isin(b, x+49, y-32) and isin(b, x+5, y+86) and isin(b, x+49, y+86):
             return [[not isin(b, x-81, y), not isin(b, x-27, y), not isin(b, x+27, y), not isin(b, x+81, y), not isin(b, x+135, y)], [not isin(b, x-81, y+54), not isin(b, x-27, y+54), not isin(b, x+27, y+54), not isin(b, x+81, y+54), not isin(b, x+135, y+54)], [False, False, False, False, False], [False, False, False, False, False], [False, False, False, False, False]]
+    print("error, nie znaleziono kafelka w sklepie")
 
 best = 0
 
@@ -231,20 +238,19 @@ def step():
     get_screenshot()
     screen = cv2.imread('screen.png')
     board = board_to_bool_array(screen)
+    if all(all(row) for row in board):
+        print("plansza nie istnieje")
+        tap(1000, 230)
+        time.sleep(0.2)
+        tap(500, 1700)
+        return 0
     shop = []
     for i in range(3):
         shop.append(array_of_shape(screen, i))
     valid_actions = get_all_valid_actions(board, shop)
     if not valid_actions:
-        if all(all(row) for row in board):
-            print("plansza nie istnieje")
-            tap(1000, 230)
-            time.sleep(0.2)
-            tap(500, 1700)
-            return 0
-        else:
-            print("brak akcji")
-            return 1
+        print("brak akcji!")
+        return 1
 
     action, lines_cleared = best_action(board, shop, valid_actions)
     move(shop, action)
@@ -256,9 +262,17 @@ def main():
     while True:
         lines_cleared = step()
         if lines_cleared > 0:
-            time.sleep(1.2)
+            time.sleep(1)
         time.sleep(0.3)
+
+def checkShop(s = "screen.png"):
+    screen = cv2.imread(s)
+    shop = []
+    for i in range(3):
+        shop.append(array_of_shape(screen, i))
+    print(shop)
 
 if __name__ == "__main__":
     main()
+    #checkShop()
     #dekompilator java, żeby ogarnąć reload_shop()
