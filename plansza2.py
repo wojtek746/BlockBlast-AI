@@ -5,17 +5,19 @@
 import copy
 
 # configuration variables
-penalty_for_losing = -1000
+penalty_for_losing = -5000
 
 
 # it is my static variable in Python -PR-
-ocena_planszy = 0
 
 
 # „predicted_reward” — ocena planszy (8x8)-T/F -PR-
 def predicted_reward(board, lines_cleared, shop, isWithoutOcenaPlanszy = False):
     global ocena_planszy # static -PR-
-    nowa_ocena_planszy = 0
+    nowa_ocena_planszy = 1000
+
+    board = clear_lines(board)
+
     T = [[1] * 10 for _ in range(10)]
     #ki, kj = [0] * 10, [0] * 10 # kubełek i oraz kubełek j -PR-
 
@@ -26,19 +28,17 @@ def predicted_reward(board, lines_cleared, shop, isWithoutOcenaPlanszy = False):
     for i in range(1, 9):
         for j in range(1, 9):
             neighbours = T[i+1][j]+T[i-1][j]+T[i][j+1]+T[i][j-1]
+            middle = int(((i - 4.5) ** 2 + (j - 4.5) ** 2) // 2)
             if T[i][j] == True:
-               nowa_ocena_planszy += 1 #per block
-               nowa_ocena_planszy += [0, 2, 6,12,20][neighbours] # to do
+                nowa_ocena_planszy += 5 + middle
+                nowa_ocena_planszy += [-9,-3, 0,  5,  20][neighbours]  # to do
             else:
-               #neighbours += T[i+1][j+1]+T[i+1][j-1]+T[i-1][j+1]+T[i-1][j-1]
-               #nowa_ocena_planszy += [  0, -1, -3, -5, -9, -14, -20, -27, -35][neighbours] # to do
-               nowa_ocena_planszy += [ 4, 0, 0, -20, -80][neighbours] # to do
-
-    ocena = nowa_ocena_planszy + 1000 * lines_cleared
-    if not isWithoutOcenaPlanszy:
-        ocena -= ocena_planszy
-        ocena_planszy = nowa_ocena_planszy
-    return ocena #+ is_imposible_to_survive(board, shop) * penalty_for_losing
+                nowa_ocena_planszy += [10, 0,-5,-25,-125][neighbours] # to do
+    #print(nowa_ocena_planszy + 1000 * lines_cleared)
+    if is_imposible_to_survive(copy.deepcopy(board), shop):
+        print("Imposible! ", end="")
+        nowa_ocena_planszy += penalty_for_losing
+    return nowa_ocena_planszy + 1000 * lines_cleared
 
 def fits_on(board, shape, i, j):
     for x in range(5):
@@ -67,63 +67,42 @@ def clear_lines(board):
     for i in lines_to_remove:
         for j in range(8):
             board[i][j] = False
+    return board
 
 def is_imposible_to_survive(board, shop):
-    if not shop[0]:
-        if not shop[1]:
-            if not shop[2]:
-                return 0
+    elementy = []
+    if shop[0]:
+        elementy.append(shop[0])
+    if shop[1]:
+        elementy.append(shop[1])
+    if shop[2]:
+        elementy.append(shop[2])
+    #print(len(elementy), end="")
+    if len(elementy) == 2: #else = 1
+        for ie in range(len(elementy)):
+            e = elementy[ie]
             for i in range(8):
                 for j in range(8):
-                    if fits_on(board, shop[2], i, j):
-                        return 0
-            return 1
+                    if fits_on(board, e, i, j):
+                        b = copy.deepcopy(board)
+                        for x in range(5):
+                            for y in range(5):
+                                if e[x][y]:
+                                    b[i+x][j+y] = True
+                        b = clear_lines(b)
+                        for je in range(len(elementy)):
+                            if je == ie:
+                                continue
+                            e2 = elementy[je]
+                            for i2 in range(8):
+                                for j2 in range(8):
+                                    if fits_on(b, e2, i2, j2):
+                                        return 0
+    elif len(elementy) == 1:
         for i in range(8):
             for j in range(8):
-                if fits_on(board, shop[1], i, j):
-                    if not shop[2]:
-                        return 0
-                    b = copy.deepcopy(board)
-                    for x in range(5):
-                        for y in range(5):
-                            if shop[1][x][y]:
-                                b[i+x][j+y] = True
-                    clear_lines(b)
-                    for i2 in range(8):
-                        for j2 in range(8):
-                            if fits_on(b, shop[2], i2, j2):
-                                return 0
-        return 1
-    for i in range(8):
-        for j in range(8):
-            if fits_on(board, shop[0], i, j):
-                b = copy.deepcopy(board)
-                for x in range(5):
-                    for y in range(5):
-                        if shop[0][x][y]:
-                            b[i+x][j+y] = True
-                clear_lines(b)
-                if not shop[1]:
-                    if not shop[2]:
-                        return 0
-                    for i2 in range(8):
-                        for j2 in range(8):
-                            if fits_on(b, shop[2], i2, j2):
-                                return 0
-                else:
-                    for i1 in range(8):
-                        for j1 in range(8):
-                            if fits_on(b, shop[1], i1, j1):
-                                if not shop[2]:
-                                    return 0
-                                b2 = copy.deepcopy(b)
-                                for x in range(5):
-                                    for y in range(5):
-                                        if shop[1][x][y]:
-                                            b2[i1+x][j1+y] = True
-                                clear_lines(b2)
-                                for i2 in range(8):
-                                    for j2 in range(8):
-                                        if fits_on(b2, shop[2], i2, j2):
-                                            return 0
+                if fits_on(board, elementy[0], i, j):
+                    return 0
+    else:
+        return 0
     return 1

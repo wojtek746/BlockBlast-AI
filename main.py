@@ -3,7 +3,7 @@ import time
 import subprocess
 import cv2
 
-from plansza2 import predicted_reward, penalty_for_losing
+from plansza2 import predicted_reward, penalty_for_losing, clear_lines
 from random import choice
 
 def tap(x, y):
@@ -18,7 +18,7 @@ def get_screenshot(filename='screen.png'):
     subprocess.run(["adb", "shell", "rm", "/sdcard/screen.png"])
 
 def move(shop, action):
-    t = 1000
+    t = 1.2
     shop_index, row, col = action // 64, (action % 64) // 8, action % 8
     match shop_index:
         case 0:
@@ -53,7 +53,7 @@ def move(shop, action):
     dy -= row * 86
     #print(row, col)
 
-    swipe(from_x, from_y, from_x + dx, from_y - dy, t)
+    swipe(from_x, from_y, from_x + dx, from_y - dy, int(t*(dx**2+dy**2)**0.5)+10)
 
 blue = [(148, 81, 58), (148, 85, 58), (148, 85, 66), (140, 81, 58), (140, 73, 49), (132, 69, 49), (140, 77, 58), (132, 65, 41), (132, 65, 49), (140, 77, 49), (156, 85, 66)]
 
@@ -123,6 +123,20 @@ def array_of_shape(b, n):
         if isin(b, x+5, y-32) and isin(b, x+49, y-32) and isin(b, x+5, y+86) and isin(b, x+49, y+86):
             return [[not isin(b, x-81, y), not isin(b, x-27, y), not isin(b, x+27, y), not isin(b, x+81, y), not isin(b, x+135, y)], [not isin(b, x-81, y+54), not isin(b, x-27, y+54), not isin(b, x+27, y+54), not isin(b, x+81, y+54), not isin(b, x+135, y+54)], [False, False, False, False, False], [False, False, False, False, False], [False, False, False, False, False]]
 
+best = 0
+
+def save(reward):
+    global best
+    if reward > best:
+        best = reward
+        with open("best_reward.txt", "w") as f:
+            f.write(str(reward))
+
+def load():
+    global best
+    with open("best_reward.txt", "r") as f:
+        best = int(f.read())
+
 def board_to_bool_array(board):
     start_x = 120
     start_y = 670
@@ -191,22 +205,27 @@ def simulate_place_shape(board, shop, action):
                 break
         if col_full:
             lines_to_remove.append(j)
-    return len(lines_to_remove)
+    shop[shop_index] = None
+    return len(lines_to_remove), shop, new_board
 
 def best_action(board, shop, valid_actions):
     best = []
-    best_reward = float('-inf')
+    best_reward = -10000
+    best_lines_cleared = 0
     for action in valid_actions:
-        lines_cleared = simulate_place_shape(board, shop, action)
-        reward = predicted_reward(board, lines_cleared, shop)
-        if not get_all_valid_actions(board, shop): #śmierć
-            reward += penalty_for_losing
+        lines_cleared, new_shop, new_board = simulate_place_shape(board, copy.deepcopy(shop), action)
+        reward = predicted_reward(new_board, lines_cleared, new_shop)
         if reward > best_reward:
             best = [action]
             best_reward = reward
+            best_lines_cleared = lines_cleared
         elif reward == best_reward:
             best.append(action)
-    return choice(best)
+            if lines_cleared > best_lines_cleared:
+                best_lines_cleared = lines_cleared
+    save(best_reward)
+    print("choice", best_reward, len(best), len(valid_actions))
+    return choice(best), best_lines_cleared
 
 def step():
     get_screenshot()
@@ -217,17 +236,29 @@ def step():
         shop.append(array_of_shape(screen, i))
     valid_actions = get_all_valid_actions(board, shop)
     if not valid_actions:
-        print("brak akcji")
-        tap(500, 1700)
-        return
+        if all(all(row) for row in board):
+            print("plansza nie istnieje")
+            tap(1000, 230)
+            time.sleep(0.2)
+            tap(500, 1700)
+            return 0
+        else:
+            print("brak akcji")
+            return 1
 
-    action = best_action(board, shop, valid_actions)
+    action, lines_cleared = best_action(board, shop, valid_actions)
     move(shop, action)
 
+    return lines_cleared
+
 def main():
+    load()
     while True:
-        step()
-        time.sleep(0.7)
+        lines_cleared = step()
+        if lines_cleared > 0:
+            time.sleep(1.2)
+        time.sleep(0.3)
 
 if __name__ == "__main__":
     main()
+    #dekompilator java, żeby ogarnąć reload_shop()
