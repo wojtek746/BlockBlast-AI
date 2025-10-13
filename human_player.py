@@ -2,6 +2,7 @@ import pygame
 import sys
 from GameSimulator import GameSimulator
 import numpy as np
+from game import get_all_valid_actions, best_action
 
 pygame.init()
 
@@ -21,7 +22,6 @@ BOARD_HEIGHT = BOARD_SIZE * CELL_SIZE
 SHOP_HEIGHT = 150
 WINDOW_WIDTH = BOARD_WIDTH + 300  # Dodatkowe miejsce na info
 WINDOW_HEIGHT = BOARD_HEIGHT + SHOP_HEIGHT + 100
-
 
 class HumanPlayer:
     def __init__(self):
@@ -52,6 +52,28 @@ class HumanPlayer:
 
                 pygame.draw.rect(self.screen, color, (x, y, CELL_SIZE, CELL_SIZE))
                 pygame.draw.rect(self.screen, BLACK, (x, y, CELL_SIZE, CELL_SIZE), 2)
+
+        board = self.game.board.tolist()
+        shop = []
+        for s in self.game.shop:
+            if s is np.zeros((5, 5), dtype=bool):
+                shop.append(None)
+            else:
+                shop.append(s.tolist())
+
+        action, _ = best_action(board, shop, get_all_valid_actions(board, shop))
+        shop_index, row, col = action // 64, (action % 64) // 8, action % 8
+        shape = self.game.shop[shop_index]
+        for i in range(5):
+            for j in range(5):
+                if shape[i][j]:
+                    r = row + i
+                    c = col + j
+                    if 0 <= r < BOARD_SIZE and 0 <= c < BOARD_SIZE:
+                        x = start_x + c * CELL_SIZE
+                        y = start_y + r * CELL_SIZE
+                        pygame.draw.rect(self.screen, YELLOW, (x, y, CELL_SIZE, CELL_SIZE))
+                        pygame.draw.rect(self.screen, BLACK, (x, y, CELL_SIZE, CELL_SIZE), 2)
 
     def draw_shape(self, shape, start_x, start_y, cell_size=30, color=GREEN):
         for i in range(5):
@@ -137,6 +159,7 @@ class HumanPlayer:
             if np.any(self.game.shop[shop_click]):
                 self.selected_shop_index = shop_click
                 print(f"Wybrano kształt {shop_click + 1}")
+                self.draw()
             return
 
         board_click = self.get_board_click(mouse_pos)
@@ -147,6 +170,7 @@ class HumanPlayer:
                 print(f"Umieszczono kształt na pozycji ({row}, {col})")
                 print(f"Nowy wynik: {self.game.score}")
                 self.selected_shop_index = None
+                self.draw()
             else:
                 print("Nie można umieścić kształtu w tym miejscu!")
 
@@ -157,6 +181,7 @@ class HumanPlayer:
         print("Gra zrestartowana!")
 
     def run(self):
+        self.draw()
         while self.running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -172,17 +197,17 @@ class HumanPlayer:
                     if event.button == 1:  # Lewy przycisk myszy
                         self.handle_click(event.pos)
 
-            self.screen.fill(WHITE)
-            self.draw_board()
-            self.draw_shop()
-            self.draw_info()
-
             pygame.display.flip()
             self.clock.tick(60)
 
         pygame.quit()
         sys.exit()
 
+    def draw(self):
+        self.screen.fill(WHITE)
+        self.draw_board()
+        self.draw_shop()
+        self.draw_info()
 
 if __name__ == "__main__":
     game = HumanPlayer()
